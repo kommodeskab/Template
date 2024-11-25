@@ -1,3 +1,9 @@
+src/dataset/data_path.txt
+logs
+outputs
+data
+hpc
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
