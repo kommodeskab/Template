@@ -1,43 +1,28 @@
 import torch
-import torch.nn as nn
-import wandb
+from src.utils import get_ckpt_path, get_project_from_id
 from hydra.utils import instantiate
-import glob
-from src.utils import get_ckpt_path
+import wandb
+from torch.nn import Module
+from src.utils import filter_dict_by_prefix
 
-class PretrainedNetwork(nn.Module):
-    def __init__(
-        self,
-        project_name : str,
+class PretrainedModel:
+    def __new__(
+        cls,
         experiment_id : str,
-        key : str,
-    ):
-        """
-        Load a pretrained network from a wandb run.
-        The checkpoint to the Pytorch Lightning model needs to be stored locally. 
-        The checkpoint is loaded and the weights are copied to the current network.
-        """
-        super().__init__()
-        # instantiate a dummy network to get the methods
-        # information about the network is stored in the wandb config
+        model_keyword : str,
+        ckpt_filename : str | None = None,
+    ) -> Module:
+        project_name = get_project_from_id(experiment_id)
         api = wandb.Api()
-        run = api.run(f"{project_name}/{experiment_id}")
+        run = api.run(f"kommodeskab-danmarks-tekniske-universitet-dtu/{project_name}/{experiment_id}")
         config = run.config
-        network_cfg = config['model'][key]
-        dummy_network : torch.nn.Module = instantiate(network_cfg)
-        
-        # copy the methods from the dummy network
-        for name in dir(dummy_network):
-            method = getattr(dummy_network, name)
-            if callable(method):
-                setattr(self, name, method)
-                
-        for name, module in dummy_network.named_children():
-            self.add_module(name, module)
-        
-        # load the weights from the checkpoint
-        ckpt_path = get_ckpt_path(project_name, experiment_id)
-        state_dict : dict[str, torch.Tensor] = torch.load(ckpt_path, weights_only=True)['state_dict']
-        state_dict = {k[len(key) + 1:] : v for k, v in state_dict.items() if k.startswith(key)}
-        self.load_state_dict(state_dict)
-        print(f"Loaded a pretrained network from {ckpt_path}")
+        model_config = config['model'][model_keyword]
+        dummy_model : Module = instantiate(model_config)
+        ckpt_path = get_ckpt_path(experiment_id, last=False, filename=ckpt_filename)
+        print("Loading pretrained model of type", type(dummy_model))
+        print("Loading checkpoint from", ckpt_path)
+        ckpt = torch.load(ckpt_path, map_location='cpu', weights_only=False)
+        state_dict : dict[str, Module] = ckpt['state_dict']
+        state_dict = filter_dict_by_prefix(state_dict, [f'{model_keyword}.'], remove_prefix=True)
+        dummy_model.load_state_dict(state_dict)
+        return dummy_model

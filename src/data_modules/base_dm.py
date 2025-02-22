@@ -1,5 +1,4 @@
 import pytorch_lightning as pl
-import torch.utils
 from torch.utils.data import DataLoader, random_split, Dataset
 
 class BaseDM(pl.LightningDataModule):
@@ -8,8 +7,7 @@ class BaseDM(pl.LightningDataModule):
         dataset : Dataset,
         val_dataset : Dataset = None,
         train_val_split : float = 0.95,
-        batch_size : int = 32,
-        num_workers: int = 4,
+        **kwargs
         ):
         """
         A base data module for datasets. 
@@ -17,6 +15,7 @@ class BaseDM(pl.LightningDataModule):
         """
         super().__init__()
         self.save_hyperparameters(ignore=["dataset", "val_dataset"])
+        self.kwargs = kwargs
         
         self.dataset = dataset        
         if val_dataset is None:
@@ -30,8 +29,7 @@ class BaseDM(pl.LightningDataModule):
             shuffle = True, 
             drop_last = True,
             persistent_workers = True,
-            batch_size = self.hparams.batch_size, 
-            num_workers = self.hparams.num_workers
+            **self.kwargs
             )
         
     def val_dataloader(self):
@@ -40,6 +38,5 @@ class BaseDM(pl.LightningDataModule):
             shuffle = False, 
             drop_last = True,
             persistent_workers = True,
-            batch_size = self.hparams.batch_size, 
-            num_workers = self.hparams.num_workers
+            **self.kwargs
             )
