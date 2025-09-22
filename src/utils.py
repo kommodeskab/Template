@@ -4,7 +4,36 @@ from omegaconf import DictConfig
 from datetime import datetime
 import glob
 from typing import Any
+import torch
 import wandb
+from torch import Tensor
+import contextlib
+import random
+import numpy as np
+    
+Data = dict[str, Tensor]
+
+@contextlib.contextmanager
+def temporary_seed(seed : int):
+    random_state = random.getstate()
+    numpy_state = np.random.get_state()
+    torch_state = torch.random.get_rng_state()
+    cuda_state = torch.cuda.get_rng_state() if torch.cuda.is_available() else None
+
+    try:
+        random.seed(seed)
+        np.random.seed(seed)
+        torch.manual_seed(seed)
+        if cuda_state is not None:
+            torch.cuda.set_rng_state(cuda_state)
+        yield
+        
+    finally:
+        random.setstate(random_state)
+        np.random.set_state(numpy_state)
+        torch.random.set_rng_state(torch_state)
+        if cuda_state is not None:
+            torch.cuda.set_rng_state(cuda_state)
 
 def get_current_time() -> str:
     now = datetime.now()
@@ -23,15 +52,15 @@ def instantiate_callbacks(callback_cfg : DictConfig | None) -> list:
     return callbacks
 
 def get_project_from_id(experiment_id : str) -> str:
+    experiment_id = str(experiment_id)
     project_names = wandb.Api().projects()
     project_names = [project.name for project in project_names]
-    # go through the projects and find the one that has the experiment_id
     for project_name in project_names:
         runs = wandb.Api().runs(project_name)
         run_ids = [run.id for run in runs]
         if experiment_id in run_ids:
             return project_name
-    raise ValueError("No project found with the given experiment_id")
+    raise ValueError("No project found with the given experiment_id: ", experiment_id)
 
 def get_ckpt_path(experiment_id : str, last : bool = True, filename : str | None = None) -> str:
     assert not (last and filename is not None), "last cannot be True when filename is not None"
@@ -40,10 +69,12 @@ def get_ckpt_path(experiment_id : str, last : bool = True, filename : str | None
     ckpt_paths = glob.glob(f"{folder_to_ckpt_path}/*.ckpt")
     
     if len(ckpt_paths) == 0:
-        raise FileNotFoundError("No checkpoint found")
+        raise FileNotFoundError(f"No checkpoints found in {folder_to_ckpt_path}")
     
     if last:
-        return max(ckpt_paths, key=os.path.getctime)
+        # return the last checkpoint
+        ckpt_paths.sort(key=os.path.getmtime, reverse=True)
+        return ckpt_paths[0]
     
     filename = filename if filename is not None else "best.ckpt"
     path = os.path.join(folder_to_ckpt_path, filename)
@@ -83,8 +114,34 @@ def what_logs_to_delete():
             if local_run_id not in run_ids:
                 # delete the folder
                 print(f"logs/{project_name}/{local_run_id}")
-    print("Done")
-    
                 
+    print("Done")
+
+def config_from_id(experiment_id : str) -> dict:
+    project_name = get_project_from_id(experiment_id)
+    api = wandb.Api()
+    # TODO: make this more dynamical for other users/projects
+    possible_names = [
+        "kommodeskab-danmarks-tekniske-universitet-dtu",
+        "bjornsandjensen-dtu",
+    ]
+    for name in possible_names:
+        try:
+            run = api.run(f"{name}/{project_name}/{experiment_id}")
+            print(f"Found experiment {experiment_id} in {name}.")
+            return run.config
+        except:
+            pass
+        
+    raise ValueError(f"Could not find experiment {experiment_id} in any of the projects: {possible_names}.")
+
+def model_config_from_id(experiment_id : str, model_keyword : str) -> dict:
+    config = config_from_id(experiment_id)
+    if 'PretrainedModel' in config['model'][model_keyword]['_target_']:
+        new_id = config['model'][model_keyword]['experiment_id']
+        return model_config_from_id(new_id, model_keyword)
+    return config['model'][model_keyword]
+
+            
 if __name__ == "__main__":
     what_logs_to_delete()

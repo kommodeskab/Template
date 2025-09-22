@@ -1,7 +1,6 @@
 import torch
-from src.utils import get_ckpt_path, get_project_from_id
+from src.utils import get_ckpt_path, model_config_from_id
 from hydra.utils import instantiate
-import wandb
 from torch.nn import Module
 from src.utils import filter_dict_by_prefix
 
@@ -12,11 +11,7 @@ class PretrainedModel:
         model_keyword : str,
         ckpt_filename : str | None = None,
     ) -> Module:
-        project_name = get_project_from_id(experiment_id)
-        api = wandb.Api()
-        run = api.run(f"kommodeskab-danmarks-tekniske-universitet-dtu/{project_name}/{experiment_id}")
-        config = run.config
-        model_config = config['model'][model_keyword]
+        model_config = model_config_from_id(experiment_id, model_keyword)
         dummy_model : Module = instantiate(model_config)
         ckpt_path = get_ckpt_path(experiment_id, last=False, filename=ckpt_filename)
         print("Loading pretrained model of type", type(dummy_model))
