@@ -2,6 +2,7 @@ src/dataset/data_path.txt
 logs
 outputs
 hpc
+playground.ipynb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

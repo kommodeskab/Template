@@ -3,7 +3,7 @@ import netrc
 
 os.makedirs("logs", exist_ok=True)
 os.makedirs("hpc", exist_ok=True)
-assert os.path.exists("src/dataset/data_path.txt"), "Please create data_path.txt in src/dataset"
+assert os.environ.get("DATA_PATH") is not None, "Please set the DATA_PATH environment variable"
 
 def wandb_logged_in():
     netrc_path = os.path.expanduser("~/.netrc")

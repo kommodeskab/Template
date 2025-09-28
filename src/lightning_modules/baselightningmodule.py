@@ -33,14 +33,14 @@ class BaseLightningModule(pl.LightningModule):
         loss = self.common_step(batch, batch_idx)
         loss = {f'train_{k}': v for k, v in loss.items()}
         self.log_dict(loss)
-        return loss.loss
+        return loss['train_loss']
 
     def validation_step(self, batch : Data, batch_idx : int) -> Tensor:
         with temporary_seed(0):
             loss = self.common_step(batch, batch_idx)
         loss = {f'val_{k}': v for k, v in loss.items()}
         self.log_dict(loss)
-        return loss.loss
+        return loss['val_loss']
 
     def on_before_optimizer_step(self, optimizer : Optimizer):
         norms = grad_norm(self, norm_type=2)

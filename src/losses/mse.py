@@ -11,5 +11,5 @@ class MSELoss(BaseLossFunction):
         super().__init__()
 
     def forward(self, model_output: Data, batch: Data) -> Data:
-        loss = torch.nn.functional.mse_loss(model_output.out, batch.targets)
+        loss = torch.nn.functional.mse_loss(model_output['out'], batch['targets'])
         return {'loss': loss}
