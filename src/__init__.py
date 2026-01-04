@@ -6,7 +6,7 @@ from torch.optim.lr_scheduler import LRScheduler
 from matplotlib.figure import Figure
 import numpy as np
 
-TensorDict = Dict[str, Tensor | float | int]
+TensorDict = Dict[str, Tensor]
 OptimizerType = Optional[partial[Optimizer]]
 LRSchedulerType = Optional[dict[str, partial[LRScheduler] | str]]
 ImageType = list[Tensor | Figure | np.ndarray]

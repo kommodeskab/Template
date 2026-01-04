@@ -1,1 +1,1 @@
-from .example import SimpleVAE
+from baselightningmodule import BaseLightningModule
