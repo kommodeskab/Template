@@ -1,5 +1,5 @@
 from losses import BaseLossFunction
-from utils import Data
+from src import Batch, ModelOutput, LossOutput
 import torch
 
 class MSELoss(BaseLossFunction):
@@ -10,6 +10,6 @@ class MSELoss(BaseLossFunction):
     def __init__(self):
         super().__init__()
 
-    def forward(self, model_output: Data, batch: Data) -> Data:
-        loss = torch.nn.functional.mse_loss(model_output['out'], batch['targets'])
-        return {'loss': loss}
+    def forward(self, model_output: ModelOutput, batch: Batch) -> LossOutput:
+        loss = torch.nn.functional.mse_loss(model_output['output'], batch['target'])
+        return LossOutput(loss=loss)

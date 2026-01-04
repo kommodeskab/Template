@@ -1,67 +1,78 @@
-from functools import partial
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
-from torch import Tensor
-from pytorch_lightning.utilities import grad_norm
-from torch.utils.data import Dataset
-from losses import BaseLossFunction
-from torch.optim.optimizer import Optimizer
-from torch.optim.lr_scheduler import LRScheduler    
-from ..utils import Data, temporary_seed
+from torch import nn
+import torch.nn.init as init
+import torch
+from src.data_modules import BaseDM
+from src import OptimizerType, LRSchedulerType, Batch, ModelOutput, ImageType
+from src.utils import temporary_seed
 
 class BaseLightningModule(pl.LightningModule):
-    loss_fn: BaseLossFunction
-    
     def __init__(
         self,
-        optimizer : partial[Optimizer] | None = None,
-        lr_scheduler : dict[str, partial[LRScheduler] | str] | None = None,
+        optimizer: OptimizerType = None,
+        lr_scheduler: LRSchedulerType = None,
         ):
         super().__init__()
-        
         self.partial_optimizer = optimizer
         self.partial_lr_scheduler = lr_scheduler
         
-    def forward(self, batch : Data) -> Data: ...
-
-    def common_step(self, batch : Data, batch_idx : int) -> Data:
-        model_output = self.forward(batch)
-        loss = self.loss_fn(model_output, batch)
-        return loss
-
-    def training_step(self, batch : Data, batch_idx : int) -> Tensor:
-        loss = self.common_step(batch, batch_idx)
-        loss = {f'train_{k}': v for k, v in loss.items()}
-        self.log_dict(loss)
-        return loss['train_loss']
-
-    def validation_step(self, batch : Data, batch_idx : int) -> Tensor:
-        with temporary_seed(0):
-            loss = self.common_step(batch, batch_idx)
-        loss = {f'val_{k}': v for k, v in loss.items()}
-        self.log_dict(loss)
-        return loss['val_loss']
-
-    def on_before_optimizer_step(self, optimizer : Optimizer):
-        norms = grad_norm(self, norm_type=2)
-        self.log_dict(norms)
-
+    @property
+    def datamodule(self) -> BaseDM:
+        return self.trainer.datamodule
+        
     @property
     def logger(self) -> WandbLogger:
         return self.trainer.logger
     
-    @property
-    def global_step(self) -> int:
-        return self.trainer.global_step
+    def log_images(self, key: str, images: list[ImageType], **kwargs) -> None:
+        logger = self.logger
+        logger.log_image(
+            key = key,
+            images = images,
+            step = self.global_step
+        )
     
-    @property
-    def train_dataset(self) -> Dataset:
-        return self.trainer.datamodule.train_dataset
+    @staticmethod
+    def init_weights(model: nn.Module) -> None:
+        """
+        Initializes the weights of the forward and backward models  
+        using the Kaiming Normal initialization
+        """
+        @torch.no_grad()
+        def initialize(m):
+            if isinstance(m, nn.Conv2d):
+                init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                init.constant_(m.weight, 1)
+                init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+            elif isinstance(m, nn.ConvTranspose2d):
+                init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    init.constant_(m.bias, 0)
+
+        # Apply initialization to both networks
+        model.apply(initialize)
+        
+    def common_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
+        raise NotImplementedError("This method should be implemented in subclasses.")
     
-    @property
-    def val_dataset(self) -> Dataset:
-        return self.trainer.datamodule.val_dataset
+    def training_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
+        return self.common_step(batch, batch_idx)
     
+    def validation_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
+        with temporary_seed(torch.seed()):
+            return self.common_step(batch, batch_idx)
+        
+    def test_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
+        raise NotImplementedError("Test step is not implemented.")
+        
     def configure_optimizers(self):
         assert self.partial_optimizer is not None, "Optimizer must be provided during training."
         assert self.partial_lr_scheduler is not None, "Learning rate scheduler must be provided during training."

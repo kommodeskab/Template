@@ -2,9 +2,9 @@ import requests
 import os
 
 def update_zotero_bib(
-    user_id : str,
-    collection_id : str | None = None,
-    api_key : str | None = None
+    user_id: str,
+    collection_id: str | None = None,
+    api_key: str | None = None
 ) -> None:
     base_url = f"https://api.zotero.org/users/{user_id}"
 

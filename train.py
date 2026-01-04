@@ -8,10 +8,11 @@ import os, hydra, torch
 from pytorch_lightning import LightningDataModule, LightningModule, Callback
 import wandb
 import yaml
+import logging
 
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
-def update_dict(d : dict | list):
+def update_dict(d: dict | list[dict]) -> None:
     """
     Recursively update the dictionary to replace the model config with the one from the experiment id.
     Why? Because if the the same model is finetuned multiple times, the initialization process will be a mess since it will load all previous configs.
@@ -30,16 +31,18 @@ def update_dict(d : dict | list):
             update_dict(v)
 
 @hydra.main(version_base=None, config_path="configs", config_name="config")
-def my_app(cfg : DictConfig) -> None:
+def my_app(cfg: DictConfig) -> None:
+    logger = logging.getLogger(__name__)
+    
     pl.seed_everything(cfg.seed)
 
     project_name, task_name, id = cfg.project_name, cfg.task_name, cfg.continue_from_id
     config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
     update_dict(config)
 
-    print("Config:", yaml.dump(config, default_flow_style=False, sort_keys=False))
+    logger.info("Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False))
     
-    logger = WandbLogger(
+    wandblogger = WandbLogger(
         **cfg.logger,
         project = project_name, 
         name = task_name, 
@@ -48,30 +51,30 @@ def my_app(cfg : DictConfig) -> None:
         )
     
     if id:
-        print(f"Continuing from id: {id}")
+        logger.info(f"Continuing from id: {id}")
         ckpt_path = get_ckpt_path(id, last=True)
     else:
         ckpt_path = None
     
-    print("Instantiating callbacks..")
-    callbacks : list[Callback] = instantiate_callbacks(cfg.get("callbacks", None))
+    logger.info("Instantiating callbacks..")
+    callbacks: list[Callback] = instantiate_callbacks(cfg.get("callbacks", None))
 
-    print("Setting up trainer..")
+    logger.info("Setting up trainer..")
     trainer = Trainer(
         **cfg.trainer, 
-        logger = logger, 
+        logger = wandblogger, 
         callbacks = callbacks
         )
     
-    print("Instantiating model and datamodule..")
-    datamodule : LightningDataModule = hydra.utils.instantiate(cfg.data)
-    model : LightningModule = hydra.utils.instantiate(cfg.model)
+    logger.info("Instantiating model and datamodule..")
+    datamodule: LightningDataModule = hydra.utils.instantiate(cfg.data)
+    model: LightningModule = hydra.utils.instantiate(cfg.model)
 
     if cfg.compile:
-        print("Compiling model..")
-        torch.compile(model)
+        logger.info("Compiling model..")
+        model = torch.compile(model)
         
-    print("Beginning training..")
+    logger.info("Beginning training..")
     trainer.fit(model, datamodule, ckpt_path=ckpt_path)
     wandb.finish()
 

@@ -4,17 +4,16 @@ from omegaconf import DictConfig
 from datetime import datetime
 import glob
 from typing import Any
-import torch
 import wandb
-from torch import Tensor
 import contextlib
 import random
 import numpy as np
-    
-Data = dict[str, Tensor]
+import torch
+from hydra.utils import instantiate
+import torch.nn as nn
 
 @contextlib.contextmanager
-def temporary_seed(seed : int):
+def temporary_seed(seed: int):
     random_state = random.getstate()
     numpy_state = np.random.get_state()
     torch_state = torch.random.get_rng_state()
@@ -39,7 +38,7 @@ def get_current_time() -> str:
     now = datetime.now()
     return now.strftime("%d%m%y%H%M%S")
 
-def instantiate_callbacks(callback_cfg : DictConfig | None) -> list:
+def instantiate_callbacks(callback_cfg: DictConfig | None) -> list:
     callbacks = []
     
     if callback_cfg is None:
@@ -51,7 +50,7 @@ def instantiate_callbacks(callback_cfg : DictConfig | None) -> list:
         
     return callbacks
 
-def get_project_from_id(experiment_id : str) -> str:
+def get_project_from_id(experiment_id: str) -> str:
     experiment_id = str(experiment_id)
     project_names = wandb.Api().projects()
     project_names = [project.name for project in project_names]
@@ -62,7 +61,7 @@ def get_project_from_id(experiment_id : str) -> str:
             return project_name
     raise ValueError("No project found with the given experiment_id: ", experiment_id)
 
-def get_ckpt_path(experiment_id : str, last : bool = True, filename : str | None = None) -> str:
+def get_ckpt_path(experiment_id: str, last: bool = True, filename: str | None = None) -> str:
     assert not (last and filename is not None), "last cannot be True when filename is not None"
     project_name = get_project_from_id(experiment_id)
     folder_to_ckpt_path = f"logs/{project_name}/{experiment_id}/checkpoints"
@@ -81,7 +80,7 @@ def get_ckpt_path(experiment_id : str, last : bool = True, filename : str | None
     assert os.path.exists(path), f"Checkpoint not found at {path}"
     return path
 
-def filter_dict_by_prefix(d : dict[str, Any], prefixs : list[str], remove_prefix : bool = False) -> dict:
+def filter_dict_by_prefix(d: dict[str, Any], prefixs: list[str], remove_prefix: bool = False) -> dict:
     """
     Only keep the key-value pairs in the dictionary if the key starts with any of the strings in prefix list.
     If remove_prefix is True, the prefix will be removed from the key.
@@ -117,7 +116,7 @@ def what_logs_to_delete():
                 
     print("Done")
 
-def config_from_id(experiment_id : str) -> dict:
+def config_from_id(experiment_id: str) -> dict:
     project_name = get_project_from_id(experiment_id)
     api = wandb.Api()
     # TODO: make this more dynamical for other users/projects
@@ -135,13 +134,23 @@ def config_from_id(experiment_id : str) -> dict:
         
     raise ValueError(f"Could not find experiment {experiment_id} in any of the projects: {possible_names}.")
 
-def model_config_from_id(experiment_id : str, model_keyword : str) -> dict:
+def model_config_from_id(experiment_id: str, model_keyword: str) -> dict:
     config = config_from_id(experiment_id)
-    if 'PretrainedModel' in config['model'][model_keyword]['_target_']:
-        new_id = config['model'][model_keyword]['experiment_id']
-        return model_config_from_id(new_id, model_keyword)
     return config['model'][model_keyword]
 
+def model_from_id(id: str, model_keyword: str) -> nn.Module:
+    config = config_from_id(id)
+    model_config = config['model']
+    module: nn.Module = instantiate(model_config)
+    
+    ckpt_path = get_ckpt_path(id, last=True)
+    ckpt = torch.load(ckpt_path, map_location='cpu', weights_only=True)
+    module.load_state_dict(ckpt['state_dict'])
+    
+    model = getattr(module, model_keyword)
+    print(f"Loaded model '{model_keyword}' from experiment id {id} at checkpoint {ckpt_path}.")
+    
+    return model
             
 if __name__ == "__main__":
     what_logs_to_delete()
