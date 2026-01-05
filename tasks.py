@@ -7,16 +7,15 @@ def build(c: Context):
     c.run("echo Syncing the environment...")
     c.run("uv sync")
 
-    # also make required directories 'hpc' and 'logs'
-    c.run("mkdir -p logs hpc")
+    # also make required directories
+    c.run("mkdir -p logs hpc data")
 
     # make .env file
     c.run("echo Creating .env file...")
     with open(".env", "w") as f:
-        f.write("DATA_PATH=...\n")
         f.write("WANDB_API_KEY=...\n")
         f.write("ZOTERO_API_KEY=...\n")
-    c.run("echo .env file created with DATA_PATH, WANDB_API_KEY and ZOTERO_API_KEY variables.")
+    c.run("echo .env file created with WANDB_API_KEY and ZOTERO_API_KEY variables.")
 
 
 @task
