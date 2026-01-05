@@ -4,6 +4,7 @@ from omegaconf import DictConfig
 from datetime import datetime
 import glob
 from typing import Any
+from pytorch_lightning import Callback
 import wandb
 import contextlib
 import random
@@ -11,6 +12,7 @@ import numpy as np
 import torch
 from hydra.utils import instantiate
 import torch.nn as nn
+
 
 @contextlib.contextmanager
 def temporary_seed(seed: int):
@@ -26,7 +28,7 @@ def temporary_seed(seed: int):
         if cuda_state is not None:
             torch.cuda.set_rng_state(cuda_state)
         yield
-        
+
     finally:
         random.setstate(random_state)
         np.random.set_state(numpy_state)
@@ -34,26 +36,29 @@ def temporary_seed(seed: int):
         if cuda_state is not None:
             torch.cuda.set_rng_state(cuda_state)
 
+
 def get_current_time() -> str:
     now = datetime.now()
     return now.strftime("%d%m%y%H%M%S")
 
-def instantiate_callbacks(callback_cfg: DictConfig | None) -> list:
-    callbacks = []
-    
+
+def instantiate_callbacks(callback_cfg: DictConfig | None) -> list[Callback]:
+    callbacks: list[Callback] = []
+
     if callback_cfg is None:
         return callbacks
-    
+
     for _, callback_params in callback_cfg.items():
         callback = hydra.utils.instantiate(callback_params)
         callbacks.append(callback)
-        
+
     return callbacks
+
 
 def get_project_from_id(experiment_id: str) -> str:
     experiment_id = str(experiment_id)
-    project_names = wandb.Api().projects()
-    project_names = [project.name for project in project_names]
+    projects = wandb.Api().projects()
+    project_names = [project.name for project in projects]
     for project_name in project_names:
         runs = wandb.Api().runs(project_name)
         run_ids = [run.id for run in runs]
@@ -61,24 +66,26 @@ def get_project_from_id(experiment_id: str) -> str:
             return project_name
     raise ValueError("No project found with the given experiment_id: ", experiment_id)
 
+
 def get_ckpt_path(experiment_id: str, last: bool = True, filename: str | None = None) -> str:
     assert not (last and filename is not None), "last cannot be True when filename is not None"
     project_name = get_project_from_id(experiment_id)
     folder_to_ckpt_path = f"logs/{project_name}/{experiment_id}/checkpoints"
     ckpt_paths = glob.glob(f"{folder_to_ckpt_path}/*.ckpt")
-    
+
     if len(ckpt_paths) == 0:
         raise FileNotFoundError(f"No checkpoints found in {folder_to_ckpt_path}")
-    
+
     if last:
         # return the last checkpoint
         ckpt_paths.sort(key=os.path.getmtime, reverse=True)
         return ckpt_paths[0]
-    
+
     filename = filename if filename is not None else "best.ckpt"
     path = os.path.join(folder_to_ckpt_path, filename)
     assert os.path.exists(path), f"Checkpoint not found at {path}"
     return path
+
 
 def filter_dict_by_prefix(d: dict[str, Any], prefixs: list[str], remove_prefix: bool = False) -> dict:
     """
@@ -90,11 +97,12 @@ def filter_dict_by_prefix(d: dict[str, Any], prefixs: list[str], remove_prefix: 
         for prefix in prefixs:
             if k.startswith(prefix):
                 if remove_prefix:
-                    new_dict[k[len(prefix):]] = v
+                    new_dict[k[len(prefix) :]] = v
                 else:
                     new_dict[k] = v
                 break
     return new_dict
+
 
 def what_logs_to_delete():
     project_names = wandb.Api().projects()
@@ -103,18 +111,19 @@ def what_logs_to_delete():
     for project_name in project_names:
         if not os.path.exists(f"logs/{project_name}"):
             continue
-        
+
         runs = wandb.Api().runs(project_name)
         run_ids = [run.id for run in runs]
         local_run_ids = os.listdir(f"logs/{project_name}")
         local_run_ids.sort(reverse=True)
-        
+
         for local_run_id in local_run_ids:
             if local_run_id not in run_ids:
                 # delete the folder
                 print(f"logs/{project_name}/{local_run_id}")
-                
+
     print("Done")
+
 
 def config_from_id(experiment_id: str) -> dict:
     project_name = get_project_from_id(experiment_id)
@@ -129,28 +138,31 @@ def config_from_id(experiment_id: str) -> dict:
             run = api.run(f"{name}/{project_name}/{experiment_id}")
             print(f"Found experiment {experiment_id} in {name}.")
             return run.config
-        except:
-            pass
-        
+        except wandb.errors.CommError:
+            continue
+
     raise ValueError(f"Could not find experiment {experiment_id} in any of the projects: {possible_names}.")
+
 
 def model_config_from_id(experiment_id: str, model_keyword: str) -> dict:
     config = config_from_id(experiment_id)
-    return config['model'][model_keyword]
+    return config["model"][model_keyword]
+
 
 def model_from_id(id: str, model_keyword: str) -> nn.Module:
     config = config_from_id(id)
-    model_config = config['model']
+    model_config = config["model"]
     module: nn.Module = instantiate(model_config)
-    
+
     ckpt_path = get_ckpt_path(id, last=True)
-    ckpt = torch.load(ckpt_path, map_location='cpu', weights_only=True)
-    module.load_state_dict(ckpt['state_dict'])
-    
+    ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
+    module.load_state_dict(ckpt["state_dict"])
+
     model = getattr(module, model_keyword)
     print(f"Loaded model '{model_keyword}' from experiment id {id} at checkpoint {ckpt_path}.")
-    
+
     return model
-            
+
+
 if __name__ == "__main__":
     what_logs_to_delete()

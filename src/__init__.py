@@ -11,12 +11,15 @@ OptimizerType = Optional[partial[Optimizer]]
 LRSchedulerType = Optional[dict[str, partial[LRScheduler] | str]]
 ImageType = list[Tensor | Figure | np.ndarray]
 
+
 class Batch(TypedDict):
     input: Tensor
     target: Tensor
 
+
 class ModelOutput(TypedDict):
     output: Tensor
-    
+
+
 class LossOutput(TypedDict):
     loss: Tensor

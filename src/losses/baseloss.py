@@ -1,6 +1,7 @@
 import torch.nn as nn
 from src import Batch, ModelOutput, LossOutput
 
+
 class BaseLossFunction(nn.Module):
     def __init__(self):
         super().__init__()

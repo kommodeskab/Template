@@ -1,1 +1,1 @@
-from baselightningmodule import BaseLightningModule
+from baselightningmodule import BaseLightningModule as BaseLightningModule

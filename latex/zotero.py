@@ -1,23 +1,20 @@
 import requests
 import os
 
-def update_zotero_bib(
-    user_id: str,
-    collection_id: str | None = None,
-    api_key: str | None = None
-) -> None:
+
+def update_zotero_bib(user_id: str, collection_id: str | None = None, api_key: str | None = None) -> None:
     base_url = f"https://api.zotero.org/users/{user_id}"
 
     if api_key is None:
-        assert (api_key := os.environ['ZOTERO_API_KEY']) is not None, "ZOTERO_API_KEY environment variable not set"
+        assert (api_key := os.environ["ZOTERO_API_KEY"]) is not None, "ZOTERO_API_KEY environment variable not set"
 
     if collection_id:
         url = f"{base_url}/collections/{collection_id}/items"
     else:
         url = f"{base_url}/items"
 
-    headers = {'Zotero-API-Key': api_key}
-    params = {'format': 'bibtex'}
+    headers = {"Zotero-API-Key": api_key}
+    params = {"format": "bibtex"}
     response = requests.get(url, headers=headers, params=params)
 
     if response.status_code == 200:
