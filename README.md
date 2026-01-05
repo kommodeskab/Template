@@ -1,35 +1,52 @@
 # Template
  Template for deep learning projects using Pytorch Lightning and Hydra on DTU HPC. 
 
-## Install uv
+## Setting up environment
+### 1. Install uv
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ```
+### 2. Initialize Environment
 
-## Initialize Environment
-To build the environment using `uv` and invoke, run:
+To set up the virtual environment and install dependencies defined in `uv.lock`:
+
 ```bash
-uvx invoke build
+uv sync
+
+```
+*This command automatically creates a virtual environment in `.venv` and syncs it with the lockfile.*
+
+---
+
+### 3. Workflow: Sync Dependencies to Source Code
+
+If you have written new code or want to reset `pyproject.toml` to match **only** the libraries currently imported in your Python files, follow these steps.
+
+**Step A: Scan imports**
+Use `pipreqs` (via `uvx`, so no installation is required) to generate a temporary requirements file based on your actual imports:
+
+```bash
+uvx pipreqs . --savepath clean-reqs.txt --force --ignore ".venv"
 ```
 
-## Update the environment
-Have you started using a new package and want to update the environment? Run:
-```bash
-uvx invoke update
-```
-or 
-```bash
-uvx invoke update build
-```
-To also rebuild the environment.
+**Step B: Update Project Dependencies**
+Add these detected packages to your project.
 
-## Activate Environment
-To activate the environment, run:
+> **Note:** If you want to strictly remove unused packages, delete the `dependencies = [...]` section in `pyproject.toml` before running the command below.
+
 ```bash
-source .venv/bin/activate
+uv add -r clean-reqs.txt
+
 ```
 
+**Step C: Cleanup**
+Remove the temporary file:
+
+```bash
+rm clean-reqs.txt
+
+```
 
 ## WandB
 Log into WandB using:
@@ -43,18 +60,8 @@ Set an environment variable `DATA_PATH` to point to the data directory:
 export DATA_PATH="/path/to/your/data"
 ```
 
-## Check styling using Ruff
-To check the code styling (before committing) using Ruff, run:
-```bash
-uv run ruff check .
+## Setup
+Run the `setup.py` to setup the project (setting up the environment comes later).
 ```
-or to automatically fix issues, run:
-```bash
-uv run ruff format .
-```
-
-## Check typing using MyPy
-To check the code typing using MyPy, run:
-```bash
-uv run mypy <path-to-file>
+python setup.py
 ```

@@ -1,1 +1,2 @@
-from .basedataset import BaseDataset as BaseDataset
+from .mnist import MNISTDataset
+from .basedataset import BaseDataset
