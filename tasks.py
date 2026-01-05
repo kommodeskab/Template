@@ -25,6 +25,8 @@ def update(c: Context):
     WARNING: This may overwrite manual version constraints.
     """
     c.run("echo Detecting dependencies from source code...")
-    c.run("uvx pipreqs . --savepath requirements.txt --force --ignore .venv --mode=no-pin")
+    c.run(
+        "uvx pipreqs . --savepath requirements.txt --force --ignore .venv --mode=no-pin"
+    )
     c.run("uv add -r requirements.txt")
     c.run("rm requirements.txt")

@@ -1,1 +1,1 @@
-from src.data_modules.base_dm import BaseDM
+from src.data_modules.base_dm import BaseDM as BaseDM

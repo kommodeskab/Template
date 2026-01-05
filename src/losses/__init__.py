@@ -1,2 +1,2 @@
-from .baseloss import BaseLossFunction
-from  .mse import MSELoss
+from .baseloss import BaseLossFunction as BaseLossFunction
+from .mse import MSELoss as MSELoss

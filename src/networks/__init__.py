@@ -1,1 +1,1 @@
-from .pretrained import PretrainedModel
+from .pretrained import PretrainedModel as PretrainedModel
