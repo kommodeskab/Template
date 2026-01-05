@@ -11,6 +11,7 @@ import numpy as np
 import torch
 from hydra.utils import instantiate
 import torch.nn as nn
+from pytorch_lightning.callbacks import Callback
 
 
 @contextlib.contextmanager
@@ -41,8 +42,8 @@ def get_current_time() -> str:
     return now.strftime("%d%m%y%H%M%S")
 
 
-def instantiate_callbacks(callback_cfg: DictConfig | None) -> list:
-    callbacks = []
+def instantiate_callbacks(callback_cfg: DictConfig | None) -> list[Callback]:
+    callbacks: list[Callback] = []
 
     if callback_cfg is None:
         return callbacks
@@ -56,8 +57,8 @@ def instantiate_callbacks(callback_cfg: DictConfig | None) -> list:
 
 def get_project_from_id(experiment_id: str) -> str:
     experiment_id = str(experiment_id)
-    project_names = wandb.Api().projects()
-    project_names = [project.name for project in project_names]
+    projects = wandb.Api().projects()
+    project_names = [project.name for project in projects]
     for project_name in project_names:
         runs = wandb.Api().runs(project_name)
         run_ids = [run.id for run in runs]

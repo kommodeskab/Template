@@ -1,34 +1,49 @@
 # Template
  Template for deep learning projects using Pytorch Lightning and Hydra on DTU HPC. 
 
-## Setting up environment
-### 1. Install uv
+## 1. Install uv
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
-
 ```
-### 2. Initialize Environment
 
-To set up the virtual environment and install dependencies defined in `uv.lock`:
-
+## Initialize Environment
 ```bash
-uv sync
+uvx invoke build
 ```
-*This command automatically creates a virtual environment in `.venv` and syncs it with the lockfile.*
+This runs the function `build.py` as seen in `tasks.py`. It is probably a good idea to inspect the functions in `tasks.py` before running them.
 
----
 
-### 3. Workflow: add dependency
-To add a new dependency to your project, use the following command:
+## Add dependency (package)
 ```bash
 uv add <package-name>
 ```
 
 ## WandB
 Log into WandB using:
-```
+```bash
 wandb login
 ```
 
 ## Check formatting
-To check code formatting, use:
+To check (and automatically fix some) code formatting, use:
+```bash
+uvx invoke format
+```
+
+## Check typing
+To check typing using mypy, use:
+```bash
+uvx invoke typing --filename <path-to-file-or-directory>
+```
+You can omit the `--filename` argument to check the entire codebase.
+
+## Run an experiment
+To run an experiment, use:
+```bash
+python src/main.py --config-name=<config-file-name>
+```
+You can add additional overrides as needed using Hydra. For example, to change the batch size, use:
+```bash
+python src/main.py --config-name=<config-file-name> data.batch_size=64
+```
+

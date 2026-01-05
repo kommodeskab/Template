@@ -1,0 +1,27 @@
+{
+    "name": "Training Environment",
+    "build": {
+        // Point to your Dockerfile here
+        "dockerfile": "Dockerfile",
+        "context": "."
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                // Tell VS Code where the dependencies are installed
+                "python.defaultInterpreterPath": "/opt/venv/bin/python",
+                "python.analysis.extraPaths": ["/app"]
+            },
+            "extensions": [
+                "ms-python.python"
+            ]
+        }
+    },
+    // We don't need the 'uv' feature anymore because your Dockerfile
+    // is based on the official 'uv' image already!
+    "features": {},
+    
+    // Optional: If you need to run commands after the container starts
+    // "postCreateCommand": "uv sync" 
+    "remoteUser": "root"
+}

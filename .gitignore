@@ -4,6 +4,12 @@ hpc
 playgrounds
 data
 
+# ruff cache
+/.ruff_cache
+
+# VS Code
+/.vscode
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

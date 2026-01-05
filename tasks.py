@@ -2,9 +2,44 @@ from invoke import task, Context
 
 
 @task
+def stopcontainers(c: Context):
+    """Stop all Docker containers."""
+    c.run("echo Stopping following containers:")
+    c.run("docker stop $(docker ps -q)")
+    
+@task
+def cleandocker(c: Context, all: bool = False):
+    """Remove (unused) Docker containers, images, and volumes. Pass -all to remove everything."""
+    c.run(f"docker system prune {'-a' if all else ''}")
+
+@task
+def image(c: Context):
+    """Build the Docker development container image."""
+    c.run("docker build -f .devcontainer/Dockerfile -t main-image .")
+    
+@task
+def dockermain(c: Context, extra: str = ""):
+    """Run main.py inside the Docker development container. Specify the 'extra' argument to add extra command line arguments."""
+    c.run(
+        "docker run --rm "
+        "-v $(pwd):/app "
+        "-v uv-venv:/app/.venv "
+        "-v uv-cache:/root/.cache/uv "
+        f"main-image {extra}"
+    )
+
+@task
 def format(c: Context):
     """Format code using ruff."""
-    c.run("uv run ruff format . fix")
+    c.run("uv run ruff check . --fix")
+    
+
+@task
+def typing(c: Context, filename: str | None = None):
+    """Check typing using mypy."""
+    filename = filename.strip() if filename else "."
+    
+    c.run(f"uv run mypy {filename}")
 
 
 @task
@@ -26,6 +61,7 @@ def build(c: Context):
     # make .env file
     c.run("echo Creating .env file...")
     with open(".env", "w") as f:
+        f.write("DATA_PATH=...\n")
         f.write("WANDB_API_KEY=...\n")
         f.write("ZOTERO_API_KEY=...\n")
     c.run("echo .env file created with WANDB_API_KEY and ZOTERO_API_KEY variables.")
@@ -104,7 +140,7 @@ def submit(
 
     module load python3/3.12.4
     source .venv/bin/activate
-    python train.py +experiment={experiment}
+    python main.py +experiment={experiment}
     """
 
     # Write to temporary file

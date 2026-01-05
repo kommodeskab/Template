@@ -7,12 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 def split_dataset(
-    train_dataset: Dataset, val_dataset: Optional[Dataset], train_val_split: float
+    train_dataset: Dataset, val_dataset: Optional[Dataset], train_val_split: Optional[float | int]
 ) -> tuple[Dataset, Dataset]:
-    if val_dataset is None:
-        return random_split(train_dataset, [train_val_split, 1 - train_val_split])
-    else:
-        return train_dataset, val_dataset
+    if val_dataset is not None:
+        train_dataset, val_dataset = random_split(train_dataset, [train_val_split, 1 - train_val_split])
+    
+    return train_dataset, val_dataset
 
 
 class BaseDM(pl.LightningDataModule):
@@ -20,7 +20,7 @@ class BaseDM(pl.LightningDataModule):
         self,
         dataset: Dataset,
         val_dataset: Optional[Dataset] = None,
-        train_val_split: Optional[float] = None,
+        train_val_split: Optional[float | int] = None,
         **kwargs,
     ):
         """

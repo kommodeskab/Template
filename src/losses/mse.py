@@ -1,4 +1,4 @@
-from losses import BaseLossFunction
+from .baseloss import BaseLossFunction
 from src import Batch, ModelOutput, LossOutput
 import torch
 
