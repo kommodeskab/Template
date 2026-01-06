@@ -3,7 +3,7 @@
     "build": {
         // Point to your Dockerfile here
         "dockerfile": "Dockerfile",
-        "context": "."
+        "context": ".."
     },
     "customizations": {
         "vscode": {
