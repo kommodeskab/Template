@@ -50,7 +50,11 @@ To build the environment, run:
 uvx invoke build
 ```
 This runs the function `build.py` as seen in `tasks.py`. It is probably a good idea to inspect the functions in `tasks.py` before running them.
-
+Also remember to activate the environment after building it:
+```bash
+source .venv/bin/activate
+```
+Almost all commands assume that the environment is activated.
 
 ## Add dependency (package)
 If you want to add a new dependency (package) to the environment, use:
@@ -90,3 +94,29 @@ You can try out the dummy example to get started by running:
 ```bash
 python main.py --config-name=dummy
 ```
+
+## Pytest and coverage
+To run the tests using pytest, use:
+```bash
+pytest
+```
+Test a specific file:
+```bash
+pytest <path-to-file>
+```
+
+Run a specific test function in a file:
+```bash
+pytest <path-to-file>::<test-function-name>
+```
+
+To run with print statements enabled, use:
+```bash
+pytest -s
+```
+
+To see how much of the code is covered by tests, use:
+```bash
+coverage run -m pytest
+coverage report -m
+``` 
