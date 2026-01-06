@@ -4,6 +4,7 @@ task_name: ???
 continue_from_id: False
 seed: 42
 compile: True
+phase: train
 
 defaults:
   - trainer: ???

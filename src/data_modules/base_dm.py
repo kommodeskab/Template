@@ -7,9 +7,9 @@ logger = logging.getLogger(__name__)
 
 
 def split_dataset(
-    train_dataset: Dataset, val_dataset: Optional[Dataset], train_val_split: Optional[float | int]
+    train_dataset: Dataset, val_dataset: Optional[Dataset], train_val_split: Optional[float | int] = None
 ) -> tuple[Dataset, Dataset]:
-    if val_dataset is not None:
+    if train_val_split is not None:
         train_dataset, val_dataset = random_split(train_dataset, [train_val_split, 1 - train_val_split])
     
     return train_dataset, val_dataset
@@ -18,8 +18,9 @@ def split_dataset(
 class BaseDM(pl.LightningDataModule):
     def __init__(
         self,
-        dataset: Dataset,
-        val_dataset: Optional[Dataset] = None,
+        trainset: Dataset,
+        valset: Optional[Dataset] = None,
+        testset: Optional[Dataset] = None,
         train_val_split: Optional[float | int] = None,
         **kwargs,
     ):
@@ -29,19 +30,20 @@ class BaseDM(pl.LightningDataModule):
         """
         super().__init__()
         self.save_hyperparameters(ignore=["dataset", "val_dataset"])
-        self.original_dataset = dataset
-        self.train_dataset, self.val_dataset = split_dataset(
-            dataset, val_dataset, train_val_split
-        )
+        self.trainset, self.valset = split_dataset(trainset, valset, train_val_split)
+        self.testset = testset
         self.kwargs = kwargs
 
     def train_dataloader(self):
         return DataLoader(
-            dataset=self.train_dataset,
+            dataset=self.trainset,
             **self.kwargs,
         )
 
     def val_dataloader(self):
+        if self.valset is None:
+            return None
+        
         kwargs = self.kwargs.copy()
         # remove the shuffle and drop_last for validation dataloader
         for key in ["shuffle", "drop_last"]:
@@ -49,7 +51,24 @@ class BaseDM(pl.LightningDataModule):
                 kwargs.pop(key)
 
         return DataLoader(
-            dataset=self.val_dataset,
+            dataset=self.valset,
+            shuffle=False,
+            drop_last=True,
+            **kwargs,
+        )
+
+    def test_dataloader(self):
+        if self.testset is None:
+            return None
+        
+        kwargs = self.kwargs.copy()
+        # remove the shuffle and drop_last for test dataloader
+        for key in ["shuffle", "drop_last"]:
+            if key in kwargs:
+                kwargs.pop(key)
+
+        return DataLoader(
+            dataset=self.testset,
             shuffle=False,
             drop_last=True,
             **kwargs,

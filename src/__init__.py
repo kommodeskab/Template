@@ -16,10 +16,14 @@ class Batch(TypedDict):
     input: Tensor
     target: Tensor
 
-
 class ModelOutput(TypedDict):
     output: Tensor
 
-
 class LossOutput(TypedDict):
     loss: Tensor
+
+class StepOutput(TypedDict):
+    loss: Tensor
+    batch: Optional[Batch] = None
+    model_output: Optional[ModelOutput] = None
+    loss_output: Optional[LossOutput] = None

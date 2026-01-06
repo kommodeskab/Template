@@ -45,6 +45,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ## Initialize Environment
+To build the environment, run:
 ```bash
 uvx invoke build
 ```
@@ -52,15 +53,14 @@ This runs the function `build.py` as seen in `tasks.py`. It is probably a good i
 
 
 ## Add dependency (package)
+If you want to add a new dependency (package) to the environment, use:
 ```bash
 uv add <package-name>
 ```
 
 ## WandB
-Log into WandB using:
-```bash
-wandb login
-```
+Log into WandB by pasting the API key into the .env file.
+The API key can be found at: [wandb.ai/authorize](https://wandb.ai/authorize)
 
 ## Check formatting
 To check (and automatically fix some) code formatting, use:
@@ -85,4 +85,8 @@ You can add additional overrides as needed using Hydra. For example, to change t
 python main.py --config-name=<config-file-name> data.batch_size=64
 ```
 
-
+## Run the dummy example
+You can try out the dummy example to get started by running:
+```bash
+python main.py --config-name=dummy
+```

@@ -3,7 +3,6 @@ import hydra
 from omegaconf import DictConfig
 from datetime import datetime
 import glob
-from typing import Any
 import wandb
 import contextlib
 import random
@@ -90,26 +89,6 @@ def get_ckpt_path(
     assert os.path.exists(path), f"Checkpoint not found at {path}"
     return path
 
-
-def filter_dict_by_prefix(
-    d: dict[str, Any], prefixs: list[str], remove_prefix: bool = False
-) -> dict:
-    """
-    Only keep the key-value pairs in the dictionary if the key starts with any of the strings in prefix list.
-    If remove_prefix is True, the prefix will be removed from the key.
-    """
-    new_dict = {}
-    for k, v in d.items():
-        for prefix in prefixs:
-            if k.startswith(prefix):
-                if remove_prefix:
-                    new_dict[k[len(prefix) :]] = v
-                else:
-                    new_dict[k] = v
-                break
-    return new_dict
-
-
 def what_logs_to_delete():
     project_names = wandb.Api().projects()
     project_names = [project.name for project in project_names]
@@ -134,21 +113,17 @@ def what_logs_to_delete():
 def config_from_id(experiment_id: str) -> dict:
     project_name = get_project_from_id(experiment_id)
     api = wandb.Api()
-    # TODO: make this more dynamical for other users/projects
-    possible_names = [
-        "kommodeskab-danmarks-tekniske-universitet-dtu",
-        "bjornsandjensen-dtu",
-    ]
-    for name in possible_names:
-        try:
-            run = api.run(f"{name}/{project_name}/{experiment_id}")
-            print(f"Found experiment {experiment_id} in {name}.")
-            return run.config
-        except wandb.errors.CommError:
-            continue
+    name = wandb.api.viewer()['entity']
+    
+    try:
+        run = api.run(f"{name}/{project_name}/{experiment_id}")
+        print(f"Found experiment {experiment_id} in {name}.")
+        return run.config
+    except wandb.errors.CommError:
+        pass
 
     raise ValueError(
-        f"Could not find experiment {experiment_id} in any of the projects: {possible_names}."
+        f"Could not find experiment {experiment_id}."
     )
 
 

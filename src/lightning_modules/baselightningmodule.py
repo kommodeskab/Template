@@ -6,6 +6,8 @@ import torch
 from src.data_modules import BaseDM
 from src import OptimizerType, LRSchedulerType, Batch, ModelOutput, ImageType
 from src.utils import temporary_seed
+from torch.utils.data import Dataset
+from typing import Optional
 
 
 class BaseLightningModule(pl.LightningModule):
@@ -21,6 +23,18 @@ class BaseLightningModule(pl.LightningModule):
     @property
     def datamodule(self) -> BaseDM:
         return self.trainer.datamodule
+    
+    @property
+    def trainset(self) -> Dataset:
+        return self.datamodule.trainset
+    
+    @property
+    def valset(self) -> Optional[Dataset]:
+        return self.datamodule.valset
+    
+    @property
+    def testset(self) -> Optional[Dataset]:
+        return self.datamodule.testset
 
     @property
     def logger(self) -> WandbLogger:
@@ -59,13 +73,17 @@ class BaseLightningModule(pl.LightningModule):
         model.apply(initialize)
 
     def common_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
+        """
+        The common step contains the logic for both training and validation steps. \n
+        If training and validation steps are different, then we instead need to implement training_step and validation_step separately.
+        """
         raise NotImplementedError("This method should be implemented in subclasses.")
 
     def training_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
         return self.common_step(batch, batch_idx)
 
     def validation_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
-        with temporary_seed(torch.seed()):
+        with temporary_seed(0):
             return self.common_step(batch, batch_idx)
 
     def test_step(self, batch: Batch, batch_idx: int) -> ModelOutput:

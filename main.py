@@ -79,6 +79,7 @@ def my_app(cfg: DictConfig) -> None:
 
     if cfg.compile:
         logger.info("Compiling model..")
+        logger.warning("You cannot compile models on CPU. Make sure you are using a GPU!")
         model = torch.compile(model)
 
     logger.info("Beginning training..")
