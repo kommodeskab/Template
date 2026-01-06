@@ -1,7 +1,45 @@
 # Template
  Template for deep learning projects using Pytorch Lightning and Hydra on DTU HPC. 
 
-## 1. Install uv
+## Clone repo
+```bash
+git clone https://github.com/kommodeskab/Template.git
+```
+Remember that you have to login. This can be done very easily with the Github CLI. Look it up. 
+
+## New branch
+It is FORBIDDEN (literally) to push to main. Therefore, when you want to make a new change, make a new branch, for example like this:
+```bash
+git branch -b <new-branch-name>
+```
+You can make all the changes you want on this branch, then commit and push.
+
+## Make changes to main
+As mentioned, you cannot push directly to main. Instead, push your changes to your own branch. If you want to merge these changes into main, then (after having pushed) go to the Github page for the Repo and find your branch. There should be a yellow/green banner saying "`<new-branch-name> had recent pushes`" with a button "Compare & pull request". Click that button, write a description of your changes, and create a pull request. After that, someone (maybe you) can review the changes and merge them into main. You can now see the changes on main:
+```bash
+git checkout main
+git pull origin main
+```
+Optionally, if your own branch was made to make a new specific change, you can delete your branch both locally and on Github:
+```bash
+git branch -d <new-branch-name>     # delete locally
+git push origin --delete <new-branch-name> # delete on Github
+```
+Otherwise, you can choose to "reset" or update your branch as described below.
+
+## "Reset" you branch
+Have your branced diverged from main? i.e. there have been some changes on main that you would like to also have on your branch? Then type:
+```bash
+git checkout <new-branch-name>
+git merge main # or 'git rebase main'
+```
+Alternatively, if you want to throw out all your changes and forget them (note: all your changes on the branch will be lost):
+```bash
+git checkout <new-branch-name>
+git reset --hard origin/main
+```
+
+## Install uv
 ```bash
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
@@ -40,10 +78,11 @@ You can omit the `--filename` argument to check the entire codebase.
 ## Run an experiment
 To run an experiment, use:
 ```bash
-python src/main.py --config-name=<config-file-name>
+python main.py --config-name=<config-file-name>
 ```
 You can add additional overrides as needed using Hydra. For example, to change the batch size, use:
 ```bash
-python src/main.py --config-name=<config-file-name> data.batch_size=64
+python main.py --config-name=<config-file-name> data.batch_size=64
 ```
+
 
