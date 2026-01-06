@@ -82,8 +82,20 @@ def my_app(cfg: DictConfig) -> None:
         logger.warning("You cannot compile models on CPU. Make sure you are using a GPU!")
         model = torch.compile(model)
 
-    logger.info("Beginning training..")
-    trainer.fit(model, datamodule, ckpt_path=ckpt_path)
+    pl.seed_everything(cfg.seed) # re-seed during testing to ensure reproducibility
+    phase = cfg.phase
+    
+    if phase in ['train', 'both']:
+        logger.info("Beginning training..")
+        trainer.fit(model, datamodule, ckpt_path = ckpt_path)
+    
+    if phase in ['test', 'both']:
+        logger.info("Beginning testing..")
+        # if we are in 'both' phase, we test on the current parameters (from training phase), 
+        # i.e. we do not load from checkpoint
+        test_ckpt = ckpt_path if phase == 'test' else None
+        trainer.test(model, datamodule, ckpt_path = test_ckpt)
+    
     wandb.finish()
 
 

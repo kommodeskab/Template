@@ -29,7 +29,6 @@ class BaseDM(pl.LightningDataModule):
         It takes a dataset and splits into train and validation (if val_dataset is None).
         """
         super().__init__()
-        self.save_hyperparameters(ignore=["dataset", "val_dataset"])
         self.trainset, self.valset = split_dataset(trainset, valset, train_val_split)
         self.testset = testset
         self.kwargs = kwargs

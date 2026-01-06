@@ -2,7 +2,6 @@ from src.lightning_modules import BaseLightningModule
 from src.losses import BaseLossFunction
 import torch.nn as nn
 from src import OptimizerType, LRSchedulerType, Batch, ModelOutput, StepOutput
-import torch
 
 class DummyModule(BaseLightningModule):
     """A dummy LightningModule for testing purposes."""

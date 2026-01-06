@@ -16,5 +16,9 @@ compile: False # we can only compile on GPU
 data:
   batch_size: 16
 
+phase: 'test'
+continue_from_id: '060126123511'
+
 trainer:
   log_every_n_steps: 100
+  max_steps: 2000

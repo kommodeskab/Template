@@ -74,8 +74,8 @@ class BaseLightningModule(pl.LightningModule):
 
     def common_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
         """
-        The common step contains the logic for both training and validation steps. \n
-        If training and validation steps are different, then we instead need to implement training_step and validation_step separately.
+        The common step contains the logic for both training, validation, and test steps. \n
+        If train/val/test steps differ, override them in the subclass.
         """
         raise NotImplementedError("This method should be implemented in subclasses.")
 
@@ -87,7 +87,8 @@ class BaseLightningModule(pl.LightningModule):
             return self.common_step(batch, batch_idx)
 
     def test_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
-        raise NotImplementedError("Test step is not implemented.")
+        with temporary_seed(0):
+            return self.common_step(batch, batch_idx)
 
     def configure_optimizers(self):
         assert self.partial_optimizer is not None, (
