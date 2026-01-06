@@ -39,3 +39,6 @@ dev = [
 [tool.mypy]
 disable_error_code = ["override", "assignment"]
 ignore_missing_imports = true
+
+[tool.ruff]
+line-length=120

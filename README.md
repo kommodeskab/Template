@@ -130,3 +130,7 @@ This will automatically run formatting and typing checks before each commit. You
 ```bash
 uv run pre-commit run --all-files
 ```
+You can also commit without the pre-commit hooks (if they are annoying you and you just really want to push) by using:
+```bash
+git commit --no-verify
+```
