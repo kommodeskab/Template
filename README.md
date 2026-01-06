@@ -1,11 +1,11 @@
 # Template
- Template for deep learning projects using Pytorch Lightning and Hydra on DTU HPC. 
+ Template for deep learning projects using Pytorch Lightning and Hydra on DTU HPC.
 
 ## Clone repo
 ```bash
 git clone https://github.com/kommodeskab/Template.git
 ```
-Remember that you have to login. This can be done very easily with the Github CLI. Look it up. 
+Remember that you have to login. This can be done very easily with the Github CLI. Look it up.
 
 ## New branch
 It is FORBIDDEN (literally) to push to main. Therefore, when you want to make a new change, make a new branch, for example like this:
@@ -119,4 +119,14 @@ To see how much of the code is covered by tests, use:
 ```bash
 coverage run -m pytest
 coverage report -m
-``` 
+```
+
+## Pre-commit hooks
+To install pre-commit hooks, run:
+```bash
+uv run pre-commit install
+```
+This will automatically run formatting and typing checks before each commit. You can see in the file `.pre-commit-config.yaml` which checks are enabled. You can manually run all pre-commit hooks on all files whenever you want by running:
+```bash
+uv run pre-commit run --all-files
+```
