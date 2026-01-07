@@ -16,6 +16,7 @@ from pytorch_lightning import LightningDataModule, LightningModule, Callback
 import wandb
 import yaml
 import logging
+import torch
 
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
@@ -44,6 +45,7 @@ def my_app(cfg: DictConfig) -> None:
     logger = logging.getLogger(__name__)
 
     pl.seed_everything(cfg.seed)
+    torch.set_float32_matmul_precision("high")
 
     id = cfg.continue_from_id
 

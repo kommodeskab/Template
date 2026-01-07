@@ -82,7 +82,7 @@ def update(c: Context):
 @task
 def submit(
     c: Context,
-    experiment="template",
+    experiment="",
     gpu="gpuv100",
     ngpus=1,
     ncores=4,
@@ -109,7 +109,7 @@ def submit(
     import tempfile
     import os
 
-    # Use experiment name as job name if not provided
+    # Use experiment name as2 job name if not provided
     if jobname is None:
         jobname = experiment
 
@@ -140,7 +140,7 @@ def submit(
 
     module load python3/3.12.4
     source .venv/bin/activate
-    python main.py +experiment={experiment}
+    python main.py {experiment}
     """
 
     # Write to temporary file
