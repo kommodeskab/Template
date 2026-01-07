@@ -1,7 +1,7 @@
 import pytorch_lightning as pl
 from pytorch_lightning.callbacks import Callback
 from torch import Tensor
-from src import ModelOutput
+from src import StepOutput
 from src.lightning_modules import BaseLightningModule
 
 
@@ -9,10 +9,8 @@ class LogLossCallback(Callback):
     def __init__(self):
         super().__init__()
 
-    def log_outputs(
-        self, pl_module: BaseLightningModule, outputs: ModelOutput, prefix: str
-    ):
-        outputs = {k: v for k, v in outputs.items() if isinstance(v, Tensor)}
+    def log_outputs(self, pl_module: BaseLightningModule, outputs: StepOutput, prefix: str):
+        outputs = {k: v for k, v in outputs["loss_output"].items() if isinstance(v, Tensor)}
         outputs = {f"{prefix}_{k}": v for k, v in outputs.items() if v.numel() == 1}
         pl_module.log_dict(outputs, prog_bar=True)
 
@@ -20,7 +18,7 @@ class LogLossCallback(Callback):
         self,
         trainer: pl.Trainer,
         pl_module: BaseLightningModule,
-        outputs: ModelOutput,
+        outputs: StepOutput,
         batch,
         batch_idx,
     ):
@@ -30,7 +28,7 @@ class LogLossCallback(Callback):
         self,
         trainer: pl.Trainer,
         pl_module: BaseLightningModule,
-        outputs: ModelOutput,
+        outputs: StepOutput,
         batch,
         batch_idx,
         dataloader_idx=0,
@@ -41,7 +39,7 @@ class LogLossCallback(Callback):
         self,
         trainer: pl.Trainer,
         pl_module: BaseLightningModule,
-        outputs: ModelOutput,
+        outputs: StepOutput,
         batch,
         batch_idx,
         dataloader_idx=0,

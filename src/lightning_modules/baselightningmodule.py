@@ -23,15 +23,15 @@ class BaseLightningModule(pl.LightningModule):
     @property
     def datamodule(self) -> BaseDM:
         return self.trainer.datamodule
-    
+
     @property
     def trainset(self) -> Dataset:
         return self.datamodule.trainset
-    
+
     @property
     def valset(self) -> Optional[Dataset]:
         return self.datamodule.valset
-    
+
     @property
     def testset(self) -> Optional[Dataset]:
         return self.datamodule.testset
@@ -69,7 +69,7 @@ class BaseLightningModule(pl.LightningModule):
                 if m.bias is not None:
                     init.constant_(m.bias, 0)
 
-        # Apply initialization to both networks
+        # Apply initialization to networks
         model.apply(initialize)
 
     def common_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
@@ -91,12 +91,8 @@ class BaseLightningModule(pl.LightningModule):
             return self.common_step(batch, batch_idx)
 
     def configure_optimizers(self):
-        assert self.partial_optimizer is not None, (
-            "Optimizer must be provided during training."
-        )
-        assert self.partial_lr_scheduler is not None, (
-            "Learning rate scheduler must be provided during training."
-        )
+        assert self.partial_optimizer is not None, "Optimizer must be provided during training."
+        assert self.partial_lr_scheduler is not None, "Learning rate scheduler must be provided during training."
 
         optim = self.partial_optimizer(self.parameters())
         scheduler = self.partial_lr_scheduler.pop("scheduler")(optim)

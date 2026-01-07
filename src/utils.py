@@ -2,7 +2,6 @@ import os
 import hydra
 from omegaconf import DictConfig
 from datetime import datetime
-import glob
 import wandb
 import contextlib
 import random
@@ -66,28 +65,12 @@ def get_project_from_id(experiment_id: str) -> str:
     raise ValueError("No project found with the given experiment_id: ", experiment_id)
 
 
-def get_ckpt_path(
-    experiment_id: str, last: bool = True, filename: str | None = None
-) -> str:
-    assert not (last and filename is not None), (
-        "last cannot be True when filename is not None"
-    )
+def get_ckpt_path(experiment_id: str, filename: str) -> str:
     project_name = get_project_from_id(experiment_id)
-    folder_to_ckpt_path = f"logs/{project_name}/{experiment_id}/checkpoints"
-    ckpt_paths = glob.glob(f"{folder_to_ckpt_path}/*.ckpt")
+    ckpt_path = f"logs/{project_name}/{experiment_id}/checkpoints/{filename}.ckpt"
+    assert os.path.exists(ckpt_path), f"Checkpoint not found at {ckpt_path}"
+    return ckpt_path
 
-    if len(ckpt_paths) == 0:
-        raise FileNotFoundError(f"No checkpoints found in {folder_to_ckpt_path}")
-
-    if last:
-        # return the last checkpoint
-        ckpt_paths.sort(key=os.path.getmtime, reverse=True)
-        return ckpt_paths[0]
-
-    filename = filename if filename is not None else "best.ckpt"
-    path = os.path.join(folder_to_ckpt_path, filename)
-    assert os.path.exists(path), f"Checkpoint not found at {path}"
-    return path
 
 def what_logs_to_delete():
     project_names = wandb.Api().projects()
@@ -113,8 +96,8 @@ def what_logs_to_delete():
 def config_from_id(experiment_id: str) -> dict:
     project_name = get_project_from_id(experiment_id)
     api = wandb.Api()
-    name = wandb.api.viewer()['entity']
-    
+    name = wandb.api.viewer()["entity"]
+
     try:
         run = api.run(f"{name}/{project_name}/{experiment_id}")
         print(f"Found experiment {experiment_id} in {name}.")
@@ -122,9 +105,7 @@ def config_from_id(experiment_id: str) -> dict:
     except wandb.errors.CommError:
         pass
 
-    raise ValueError(
-        f"Could not find experiment {experiment_id}."
-    )
+    raise ValueError(f"Could not find experiment {experiment_id}.")
 
 
 def model_config_from_id(experiment_id: str, model_keyword: str) -> dict:
@@ -142,9 +123,7 @@ def model_from_id(id: str, model_keyword: str) -> nn.Module:
     module.load_state_dict(ckpt["state_dict"])
 
     model = getattr(module, model_keyword)
-    print(
-        f"Loaded model '{model_keyword}' from experiment id {id} at checkpoint {ckpt_path}."
-    )
+    print(f"Loaded model '{model_keyword}' from experiment id {id} at checkpoint {ckpt_path}.")
 
     return model
 

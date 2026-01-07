@@ -10,14 +10,12 @@ defaults:
 project_name: 'dummy_experiment'
 task_name: 'dummy_task'
 compile: False # we can only compile on GPU
+phase: 'train'
 
 # we can also override specific parameters here if needed
 # for example
 data:
   batch_size: 16
-
-phase: 'test'
-continue_from_id: '060126123511'
 
 trainer:
   log_every_n_steps: 100

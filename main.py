@@ -45,26 +45,28 @@ def my_app(cfg: DictConfig) -> None:
 
     pl.seed_everything(cfg.seed)
 
-    project_name, task_name, id = cfg.project_name, cfg.task_name, cfg.continue_from_id
+    id = cfg.continue_from_id
+
     config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
     update_dict(config)
 
-    logger.info(
-        "Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False)
-    )
+    logger.info("Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False))
 
     wandblogger = WandbLogger(
         **cfg.logger,
-        project=project_name,
-        name=task_name,
+        project=cfg.project_name,
+        name=cfg.task_name,
         id=get_current_time() if not id else str(id),
         config=config,
     )
 
     if id:
         logger.info(f"Continuing from id: {id}")
-        ckpt_path = get_ckpt_path(id, last=True)
+        filename = "last" if cfg.ckpt_filename is None else cfg.ckpt_filename
+        ckpt_path = get_ckpt_path(id, filename)
+        logger.info(f"Using checkpoint path: {ckpt_path}")
     else:
+        assert cfg.ckpt_filename is None, "Cannot specify ckpt_filename if not continuing from an experiment id."
         ckpt_path = None
 
     logger.info("Instantiating callbacks..")
@@ -82,20 +84,16 @@ def my_app(cfg: DictConfig) -> None:
         logger.warning("You cannot compile models on CPU. Make sure you are using a GPU!")
         model = torch.compile(model)
 
-    pl.seed_everything(cfg.seed) # re-seed during testing to ensure reproducibility
-    phase = cfg.phase
-    
-    if phase in ['train', 'both']:
+    if cfg.phase == "train":
         logger.info("Beginning training..")
-        trainer.fit(model, datamodule, ckpt_path = ckpt_path)
-    
-    if phase in ['test', 'both']:
+        trainer.fit(model, datamodule, ckpt_path=ckpt_path)
+
+    if cfg.phase == "test":
+        if ckpt_path is None:
+            logger.warning("No checkpoint path provided for testing. Is this intentional?")
         logger.info("Beginning testing..")
-        # if we are in 'both' phase, we test on the current parameters (from training phase), 
-        # i.e. we do not load from checkpoint
-        test_ckpt = ckpt_path if phase == 'test' else None
-        trainer.test(model, datamodule, ckpt_path = test_ckpt)
-    
+        trainer.test(model, datamodule, ckpt_path=ckpt_path)
+
     wandb.finish()
 
 
