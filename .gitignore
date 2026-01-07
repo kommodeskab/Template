@@ -1,8 +1,8 @@
-logs
-outputs
-hpc
-playgrounds
-data
+/logs
+/outputs
+/hpc
+/playgrounds
+/data
 
 # ruff cache
 /.ruff_cache
