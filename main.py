@@ -45,13 +45,17 @@ def my_app(cfg: DictConfig) -> None:
 
     pl.seed_everything(cfg.seed)
 
-    project_name, task_name, id = cfg.project_name, cfg.task_name, cfg.continue_from_id
+    project_name, task_name, id, phase = (cfg.project_name, cfg.task_name, cfg.continue_from_id, cfg.phase)
+
+    assert phase in ["train", "test", "both"], f"Phase must be one of 'train', 'test', or 'both', got {phase}"
+
+    if phase == "test":
+        assert id is not None, "You must provide an experiment id to continue from when phase is 'test'"
+
     config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
     update_dict(config)
 
-    logger.info(
-        "Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False)
-    )
+    logger.info("Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False))
 
     wandblogger = WandbLogger(
         **cfg.logger,
@@ -82,20 +86,17 @@ def my_app(cfg: DictConfig) -> None:
         logger.warning("You cannot compile models on CPU. Make sure you are using a GPU!")
         model = torch.compile(model)
 
-    pl.seed_everything(cfg.seed) # re-seed during testing to ensure reproducibility
-    phase = cfg.phase
-    
-    if phase in ['train', 'both']:
+    if phase in ["train", "both"]:
         logger.info("Beginning training..")
-        trainer.fit(model, datamodule, ckpt_path = ckpt_path)
-    
-    if phase in ['test', 'both']:
+        trainer.fit(model, datamodule, ckpt_path=ckpt_path)
+
+    if phase in ["test", "both"]:
         logger.info("Beginning testing..")
-        # if we are in 'both' phase, we test on the current parameters (from training phase), 
+        # if we are in 'both' phase, we test on the current parameters (from training phase),
         # i.e. we do not load from checkpoint
-        test_ckpt = ckpt_path if phase == 'test' else None
-        trainer.test(model, datamodule, ckpt_path = test_ckpt)
-    
+        test_ckpt = ckpt_path if phase == "test" else None
+        trainer.test(model, datamodule, ckpt_path=test_ckpt)
+
     wandb.finish()
 
 
