@@ -62,11 +62,11 @@ def my_app(cfg: DictConfig) -> None:
 
     if id:
         logger.info(f"Continuing from id: {id}")
-        filename = "last" if cfg.ckpt_path is None else cfg.ckpt_path
+        filename = "last" if cfg.ckpt_filename is None else cfg.ckpt_filename
         ckpt_path = get_ckpt_path(id, filename)
         logger.info(f"Using checkpoint path: {ckpt_path}")
     else:
-        assert cfg.ckpt_path is None, "Cannot specify ckpt_path if not continuing from an experiment id."
+        assert cfg.ckpt_filename is None, "Cannot specify ckpt_filename if not continuing from an experiment id."
         ckpt_path = None
 
     logger.info("Instantiating callbacks..")
