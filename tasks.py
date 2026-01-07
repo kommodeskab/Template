@@ -1,4 +1,5 @@
 from invoke import task, Context
+from typing import Optional
 
 
 @task
@@ -35,7 +36,7 @@ def format(c: Context):
     
 
 @task
-def typing(c: Context, filename: str | None = None):
+def typing(c: Context, filename: Optional[str] = None):
     """Check typing using mypy."""
     filename = filename.strip() if filename else "."
     
