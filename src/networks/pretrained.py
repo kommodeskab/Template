@@ -5,7 +5,14 @@ from src.utils import model_from_id
 class PretrainedModel:
     def __new__(
         cls,
-        experiment_id: str,
+        project: str,
+        id: str,
         model_keyword: str,
+        ckpt_filename: str = "last",
     ) -> Module:
-        return model_from_id(experiment_id, model_keyword)
+        return model_from_id(
+            project,
+            id,
+            model_keyword,
+            ckpt_filename,
+        )

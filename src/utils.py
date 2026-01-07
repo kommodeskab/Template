@@ -53,34 +53,26 @@ def instantiate_callbacks(callback_cfg: DictConfig | None) -> list[Callback]:
     return callbacks
 
 
-def get_project_from_id(experiment_id: str) -> str:
-    experiment_id = str(experiment_id)
-    projects = wandb.Api().projects()
-    project_names = [project.name for project in projects]
-    for project_name in project_names:
-        runs = wandb.Api().runs(project_name)
-        run_ids = [run.id for run in runs]
-        if experiment_id in run_ids:
-            return project_name
-    raise ValueError("No project found with the given experiment_id: ", experiment_id)
-
-
-def get_ckpt_path(experiment_id: str, filename: str) -> str:
-    project_name = get_project_from_id(experiment_id)
-    ckpt_path = f"logs/{project_name}/{experiment_id}/checkpoints/{filename}.ckpt"
+def get_ckpt_path(
+    project: str,
+    id: str,
+    filename: str = "last",
+):
+    ckpt_path = f"logs/{project}/{id}/checkpoints/{filename}.ckpt"
     assert os.path.exists(ckpt_path), f"Checkpoint not found at {ckpt_path}"
     return ckpt_path
 
 
 def what_logs_to_delete():
-    project_names = wandb.Api().projects()
+    api = wandb.Api()
+    project_names = api.projects()
     project_names = [project.name for project in project_names]
     print("It is save to delete the following folders:")
     for project_name in project_names:
         if not os.path.exists(f"logs/{project_name}"):
             continue
 
-        runs = wandb.Api().runs(project_name)
+        runs = api.runs(project_name)
         run_ids = [run.id for run in runs]
         local_run_ids = os.listdir(f"logs/{project_name}")
         local_run_ids.sort(reverse=True)
@@ -93,32 +85,43 @@ def what_logs_to_delete():
     print("Done")
 
 
-def config_from_id(experiment_id: str) -> dict:
-    project_name = get_project_from_id(experiment_id)
+def config_from_id(
+    project: str,
+    id: str
+    ) -> dict:
     api = wandb.Api()
     name = wandb.api.viewer()["entity"]
-
+    path = f"{name}/{project}/{id}"
     try:
-        run = api.run(f"{name}/{project_name}/{experiment_id}")
-        print(f"Found experiment {experiment_id} in {name}.")
+        run = api.run(path)
+        print(f"Found experiment {path}.")
         return run.config
     except wandb.errors.CommError:
         pass
 
-    raise ValueError(f"Could not find experiment {experiment_id}.")
+    raise ValueError(f"Could not find experiment {path}.")
 
 
-def model_config_from_id(experiment_id: str, model_keyword: str) -> dict:
-    config = config_from_id(experiment_id)
+def model_config_from_id(
+    project: str,
+    id: str,
+    model_keyword: str
+    ) -> dict:
+    config = config_from_id(project, id)
     return config["model"][model_keyword]
 
 
-def model_from_id(id: str, model_keyword: str) -> nn.Module:
+def model_from_id(
+    project: str,
+    id: str, 
+    model_keyword: str,
+    ckpt_filename: str = "last",
+    ) -> nn.Module:
     config = config_from_id(id)
     model_config = config["model"]
     module: nn.Module = instantiate(model_config)
 
-    ckpt_path = get_ckpt_path(id, last=True)
+    ckpt_path = get_ckpt_path(project, id, ckpt_filename)
     ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
     module.load_state_dict(ckpt["state_dict"])
 

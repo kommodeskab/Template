@@ -4,9 +4,9 @@ from pytorch_lightning.loggers import WandbLogger
 from omegaconf import OmegaConf
 from src.utils import (
     instantiate_callbacks,
-    get_current_time,
     get_ckpt_path,
     model_config_from_id,
+    get_current_time,
 )
 import pytorch_lightning as pl
 import os
@@ -22,14 +22,15 @@ os.environ["HYDRA_FULL_ERROR"] = "1"
 
 def update_dict(d: dict | list[dict]) -> None:
     """
-    Recursively update the dictionary to replace the model config with the one from the experiment id.
+    Recursively update the dictionary to replace the PretrainedModel config with the one from the experiment id of the pretrained model.
     Why? Because if the the same model is finetuned multiple times, the initialization process will be a mess since it will load all previous configs.
     """
     if isinstance(d, dict):
         if d.get("_target_", None) == "src.networks.PretrainedModel":
+            project = d["project"]
+            id = d["id"]
             model_keyword = d["model_keyword"]
-            experiment_id = d["experiment_id"]
-            model_config = model_config_from_id(experiment_id, model_keyword)
+            model_config = model_config_from_id(project, id, model_keyword)
             d.clear()
             d.update(model_config)
         for k, v in d.items():
@@ -44,30 +45,29 @@ def my_app(cfg: DictConfig) -> None:
     logger = logging.getLogger(__name__)
 
     pl.seed_everything(cfg.seed)
-
-    id = cfg.continue_from_id
+    torch.set_float32_matmul_precision("high")
 
     config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
     update_dict(config)
 
     logger.info("Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False))
-
+    
+    if (continue_from_id := cfg.continue_from_id):
+        id = continue_from_id
+        assert cfg.ckpt_filename is not None, "'ckpt_filename' must be provided when continue_from_id is set."
+        ckpt_path = get_ckpt_path(cfg.project_name, id, cfg.ckpt_filename)
+        logger.info(f"Continuing from id: {id} \n --> Using checkpoint path: {ckpt_path}")
+    else:
+        assert cfg.ckpt_filename is None, "'ckpt_filename' should be None when not continuing from an id."
+        id, ckpt_path = get_current_time(), None
+        
     wandblogger = WandbLogger(
         **cfg.logger,
         project=cfg.project_name,
         name=cfg.task_name,
-        id=get_current_time() if not id else str(id),
+        id=id,
         config=config,
     )
-
-    if id:
-        logger.info(f"Continuing from id: {id}")
-        filename = "last" if cfg.ckpt_filename is None else cfg.ckpt_filename
-        ckpt_path = get_ckpt_path(id, filename)
-        logger.info(f"Using checkpoint path: {ckpt_path}")
-    else:
-        assert cfg.ckpt_filename is None, "Cannot specify ckpt_filename if not continuing from an experiment id."
-        ckpt_path = None
 
     logger.info("Instantiating callbacks..")
     callbacks: list[Callback] = instantiate_callbacks(cfg.get("callbacks", None))
@@ -89,8 +89,6 @@ def my_app(cfg: DictConfig) -> None:
         trainer.fit(model, datamodule, ckpt_path=ckpt_path)
 
     if cfg.phase == "test":
-        if ckpt_path is None:
-            logger.warning("No checkpoint path provided for testing. Is this intentional?")
         logger.info("Beginning testing..")
         trainer.test(model, datamodule, ckpt_path=ckpt_path)
 
