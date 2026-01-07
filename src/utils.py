@@ -65,7 +65,7 @@ def get_project_from_id(experiment_id: str) -> str:
     raise ValueError("No project found with the given experiment_id: ", experiment_id)
 
 
-def get_ckpt_path(experiment_id: str, filename: str | None = None) -> str:
+def get_ckpt_path(experiment_id: str, filename: str) -> str:
     project_name = get_project_from_id(experiment_id)
     ckpt_path = f"logs/{project_name}/{experiment_id}/checkpoints/{filename}.ckpt"
     assert os.path.exists(ckpt_path), f"Checkpoint not found at {ckpt_path}"
