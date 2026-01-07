@@ -89,6 +89,16 @@ You can add additional overrides as needed using Hydra. For example, to change t
 python main.py --config-name=<config-file-name> data.batch_size=64
 ```
 
+## Testing a model
+You can also test a model after having trained it. You use the same config file but change `phase` to `test` and specifying the `id` of the run. As default, the last checkpoint (`last.ckpt`) will be used. You can override this by specifying `ckpt_path` in the config. This can be done from the command line as well. For example:
+```bash
+python main.py --config-name=<config-file-name> phase=test continue_from_id=<run-id>
+```
+Or if you want to specify a custom checkpoint path:
+```bash
+python main.py --config-name=<config-file-name> phase=test continue_from_id=<run-id> ckpt_path=<path-to-checkpoint>
+```
+
 ## Run the dummy example
 You can try out the dummy example to get started by running:
 ```bash

@@ -2,8 +2,9 @@
 project_name: ???
 task_name: ???
 continue_from_id: False
+ckpt_path: null # if null, then uses "last.ckpt"
 seed: 42
-compile: True
+compile: False # compile makes training faster, but has slow startup time. Only works on GPU.
 phase: train
 
 defaults:
