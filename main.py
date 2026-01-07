@@ -22,7 +22,7 @@ os.environ["HYDRA_FULL_ERROR"] = "1"
 
 def update_dict(d: dict | list[dict]) -> None:
     """
-    Recursively update the dictionary to replace the model config with the one from the experiment id.
+    Recursively update the dictionary to replace the PretrainedModel config with the one from the experiment id of the pretrained model.
     Why? Because if the the same model is finetuned multiple times, the initialization process will be a mess since it will load all previous configs.
     """
     if isinstance(d, dict):
