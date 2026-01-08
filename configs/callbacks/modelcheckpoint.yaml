@@ -3,9 +3,9 @@
 modelcheckpoint:
   _target_: pytorch_lightning.callbacks.ModelCheckpoint
   monitor: 'val_loss'
-  dirpath: null
+  save_top_k: 2
   filename: 'best'
-  save_top_k: 1
   mode: 'min'
   save_last: true
   verbose: true
+  save_on_exception: true
