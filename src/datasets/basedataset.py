@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class BaseDataset(Dataset):
     def __init__(self):
         super().__init__()

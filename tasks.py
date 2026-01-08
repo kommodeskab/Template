@@ -7,17 +7,20 @@ def stopcontainers(c: Context):
     """Stop all Docker containers."""
     c.run("echo Stopping following containers:")
     c.run("docker stop $(docker ps -q)")
-    
+
+
 @task
 def cleandocker(c: Context, all: bool = False):
     """Remove (unused) Docker containers, images, and volumes. Pass -all to remove everything."""
     c.run(f"docker system prune {'-a' if all else ''}")
 
+
 @task
 def image(c: Context):
     """Build the Docker development container image."""
     c.run("docker build -f .devcontainer/Dockerfile -t main-image .")
-    
+
+
 @task
 def dockermain(c: Context, extra: str = ""):
     """Run main.py inside the Docker development container. Specify the 'extra' argument to add extra command line arguments."""
@@ -29,17 +32,18 @@ def dockermain(c: Context, extra: str = ""):
         f"main-image {extra}"
     )
 
+
 @task
 def format(c: Context):
     """Format code using ruff."""
     c.run("uv run ruff check . --fix")
-    
+
 
 @task
 def typing(c: Context, filename: Optional[str] = None):
     """Check typing using mypy."""
     filename = filename.strip() if filename else "."
-    
+
     c.run(f"uv run mypy {filename}")
 
 
@@ -136,8 +140,8 @@ def submit(
 
     # walltime
     #BSUB -W {walltime}
-    #BSUB -o hpc/output_%J.out 
-    #BSUB -e hpc/error_%J.err 
+    #BSUB -o hpc/output_%J.out
+    #BSUB -e hpc/error_%J.err
 
     module load python3/3.12.4
     source .venv/bin/activate

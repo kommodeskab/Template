@@ -11,7 +11,7 @@ def split_dataset(
 ) -> tuple[Dataset, Dataset]:
     if train_val_split is not None:
         train_dataset, val_dataset = random_split(train_dataset, [train_val_split, 1 - train_val_split])
-    
+
     return train_dataset, val_dataset
 
 
@@ -42,7 +42,7 @@ class BaseDM(pl.LightningDataModule):
     def val_dataloader(self):
         if self.valset is None:
             return None
-        
+
         kwargs = self.kwargs.copy()
         # remove the shuffle and drop_last for validation dataloader
         for key in ["shuffle", "drop_last"]:
@@ -59,7 +59,7 @@ class BaseDM(pl.LightningDataModule):
     def test_dataloader(self):
         if self.testset is None:
             return None
-        
+
         kwargs = self.kwargs.copy()
         # remove the shuffle and drop_last for test dataloader
         for key in ["shuffle", "drop_last"]:
