@@ -21,33 +21,23 @@ class EMACallback(Callback):
         self.ema = ExponentialMovingAverage(pl_module.parameters(), decay=self.decay)
         self.ema.to(pl_module.device)
 
-    def on_before_zero_grad(
-        self, trainer: pl.Trainer, pl_module: BaseLightningModule, optimizer: Optimizer
-    ) -> None:
+    def on_before_zero_grad(self, trainer: pl.Trainer, pl_module: BaseLightningModule, optimizer: Optimizer) -> None:
         self.ema.update()
 
-    def on_save_checkpoint(
-        self, trainer: pl.Trainer, pl_module: BaseLightningModule, checkpoint: dict
-    ) -> None:
+    def on_save_checkpoint(self, trainer: pl.Trainer, pl_module: BaseLightningModule, checkpoint: dict) -> None:
         logger.info("Saving EMA state dict to checkpoint.")
         checkpoint["ema_state_dict"] = self.ema.state_dict()
 
-    def on_load_checkpoint(
-        self, trainer: pl.Trainer, pl_module: BaseLightningModule, checkpoint: dict
-    ) -> None:
+    def on_load_checkpoint(self, trainer: pl.Trainer, pl_module: BaseLightningModule, checkpoint: dict) -> None:
         if "ema_state_dict" in checkpoint:
             logger.info("Loading EMA state dict from checkpoint.")
             self.ema.load_state_dict(checkpoint["ema_state_dict"])
 
-    def on_validation_start(
-        self, trainer: pl.Trainer, pl_module: BaseLightningModule
-    ) -> None:
+    def on_validation_start(self, trainer: pl.Trainer, pl_module: BaseLightningModule) -> None:
         logger.info("Applying EMA weights for validation.")
         self.ema.store()
         self.ema.copy_to()
 
-    def on_validation_end(
-        self, trainer: pl.Trainer, pl_module: BaseLightningModule
-    ) -> None:
+    def on_validation_end(self, trainer: pl.Trainer, pl_module: BaseLightningModule) -> None:
         logger.info("Restoring original weights after validation.")
         self.ema.restore()

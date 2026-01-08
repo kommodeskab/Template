@@ -20,8 +20,8 @@
     // We don't need the 'uv' feature anymore because your Dockerfile
     // is based on the official 'uv' image already!
     "features": {},
-    
+
     // Optional: If you need to run commands after the container starts
-    // "postCreateCommand": "uv sync" 
+    // "postCreateCommand": "uv sync"
     "remoteUser": "root"
 }

@@ -10,6 +10,11 @@ import torch
 from hydra.utils import instantiate
 import torch.nn as nn
 from pytorch_lightning.callbacks import Callback
+import tempfile
+import shutil
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @contextlib.contextmanager
@@ -59,7 +64,17 @@ def get_ckpt_path(
     filename: str = "last",
 ):
     ckpt_path = f"logs/{project}/{id}/checkpoints/{filename}.ckpt"
-    assert os.path.exists(ckpt_path), f"Checkpoint not found at {ckpt_path}"
+
+    if not os.path.exists(ckpt_path):
+        try:
+            ckpt_path = download_checkpoint(
+                project=project,
+                id=id,
+                filename=filename,
+            )
+        except Exception as e:
+            logger.error(f"Checkpoint {ckpt_path} does not exist locally and could not be downloaded:\n{e}")
+
     return ckpt_path
 
 
@@ -85,16 +100,13 @@ def what_logs_to_delete():
     print("Done")
 
 
-def config_from_id(
-    project: str,
-    id: str
-    ) -> dict:
+def config_from_id(project: str, id: str) -> dict:
     api = wandb.Api()
     name = wandb.api.viewer()["entity"]
     path = f"{name}/{project}/{id}"
     try:
         run = api.run(path)
-        print(f"Found experiment {path}.")
+        logger.info(f"Found experiment {path}.")
         return run.config
     except wandb.errors.CommError:
         pass
@@ -102,21 +114,17 @@ def config_from_id(
     raise ValueError(f"Could not find experiment {path}.")
 
 
-def model_config_from_id(
-    project: str,
-    id: str,
-    model_keyword: str
-    ) -> dict:
+def model_config_from_id(project: str, id: str, model_keyword: str) -> dict:
     config = config_from_id(project, id)
     return config["model"][model_keyword]
 
 
 def model_from_id(
     project: str,
-    id: str, 
+    id: str,
     model_keyword: str,
     ckpt_filename: str = "last",
-    ) -> nn.Module:
+) -> nn.Module:
     config = config_from_id(id)
     model_config = config["model"]
     module: nn.Module = instantiate(model_config)
@@ -126,9 +134,67 @@ def model_from_id(
     module.load_state_dict(ckpt["state_dict"])
 
     model = getattr(module, model_keyword)
-    print(f"Loaded model '{model_keyword}' from experiment id {id} at checkpoint {ckpt_path}.")
+    logger.info(f"Loaded model '{model_keyword}' from experiment id {id} at checkpoint {ckpt_path}.")
 
     return model
+
+
+def get_root() -> str:
+    return os.popen("git rev-parse --show-toplevel").read().strip()
+
+
+def get_artifact(
+    project: str,
+    filename: str,
+):
+    """Downloads a given artifact from WandB
+
+    Args:
+        project (str): The project name
+        filename (str): The name of the artifact
+
+    Returns:
+        wandb.Artifact: The requested artifact
+    """
+    api = wandb.Api()
+    return api.artifact(f"{project}/{filename}")
+
+
+def download_checkpoint(
+    project: str,
+    id: str,
+    filename: str,
+) -> str:
+    """
+    Downloads a model checkpoint from WandB and saves it locally.
+    Return the path to the downloaded checkpoint.
+
+    Args:
+        project (str): The project name
+        id (str): The run ID
+        filename (str): The name of the artifact
+
+    Returns:
+        str: The path to the downloaded checkpoint
+    """
+
+    root = get_root()
+    artifact = get_artifact(project, filename)
+    savedir = f"{root}/logs/{project}/{id}/checkpoints"
+    final_path = f"{savedir}/{filename}.ckpt"
+
+    os.makedirs(savedir, exist_ok=True)
+
+    # Use a temporary directory to download first
+    # to not overwrite existing files, since it will download as 'model.ckpt' as default
+    with tempfile.TemporaryDirectory() as temp_dir:
+        artifact.download(root=temp_dir)
+        temp_file = f"{temp_dir}/model.ckpt"
+        assert not os.path.exists(final_path), f"Checkpoint already exists at {final_path}."
+        shutil.move(temp_file, final_path)
+        logger.info(f"Downloaded checkpoint to {final_path}.")
+
+    return final_path
 
 
 if __name__ == "__main__":

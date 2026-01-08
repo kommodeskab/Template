@@ -51,8 +51,8 @@ def my_app(cfg: DictConfig) -> None:
     update_dict(config)
 
     logger.info("Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False))
-    
-    if (continue_from_id := cfg.continue_from_id):
+
+    if continue_from_id := cfg.continue_from_id:
         id = continue_from_id
         assert cfg.ckpt_filename is not None, "'ckpt_filename' must be provided when continue_from_id is set."
         ckpt_path = get_ckpt_path(cfg.project_name, id, cfg.ckpt_filename)
@@ -60,7 +60,7 @@ def my_app(cfg: DictConfig) -> None:
     else:
         assert cfg.ckpt_filename is None, "'ckpt_filename' should be None when not continuing from an id."
         id, ckpt_path = get_current_time(), None
-        
+
     wandblogger = WandbLogger(
         **cfg.logger,
         project=cfg.project_name,
