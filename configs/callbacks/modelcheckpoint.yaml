@@ -3,7 +3,7 @@
 modelcheckpoint:
   _target_: pytorch_lightning.callbacks.ModelCheckpoint
   monitor: 'val_loss'
-  save_top_k: 2
+  save_top_k: 1
   filename: 'best'
   mode: 'min'
   save_last: true
