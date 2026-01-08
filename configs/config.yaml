@@ -7,11 +7,6 @@ seed: 42
 compile: False # compile makes training faster, but has slow startup time. Only works on GPU.
 phase: train
 
-hydra:  
-  output_subdir: null  
-  run:  
-    dir: .
-
 defaults:
   - trainer: ???
   - data: ???
