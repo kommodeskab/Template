@@ -102,7 +102,7 @@ python main.py --config-name=<config-file-name> phase=test continue_from_id=<run
 ## Run the dummy example
 You can try out the dummy example to get started by running:
 ```bash
-python main.py --config-name=dummy
+python main.py +experiment=dummy
 ```
 
 ## Pytest and coverage

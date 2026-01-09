@@ -40,6 +40,9 @@ dev = [
     "ruff>=0.14.10",
 ]
 
+[tool.ruff.lint.isort]
+known-third-party = ["wandb", "hydra"]
+
 [tool.mypy]
 disable_error_code = ["override", "assignment"]
 ignore_missing_imports = true
