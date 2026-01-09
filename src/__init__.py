@@ -24,6 +24,5 @@ class LossOutput(TypedDict):
 
 class StepOutput(TypedDict):
     loss: Tensor
-    batch: Optional[Batch] = None
     model_output: Optional[ModelOutput] = None
     loss_output: Optional[LossOutput] = None
