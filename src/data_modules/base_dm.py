@@ -58,10 +58,8 @@ class BaseDM(pl.LightningDataModule):
             return None
 
         kwargs = self.kwargs.copy()
-        # remove the shuffle and drop_last for validation dataloader
-        for key in ["shuffle", "drop_last"]:
-            if key in kwargs:
-                kwargs.pop(key)
+        kwargs.pop("shuffle", None)
+        kwargs.pop("drop_last", None)
 
         return DataLoader(
             dataset=self.valset,
@@ -75,10 +73,8 @@ class BaseDM(pl.LightningDataModule):
             return None
 
         kwargs = self.kwargs.copy()
-        # remove the shuffle and drop_last for test dataloader
-        for key in ["shuffle", "drop_last"]:
-            if key in kwargs:
-                kwargs.pop(key)
+        kwargs.pop("shuffle", None)
+        kwargs.pop("drop_last", None)
 
         return DataLoader(
             dataset=self.testset,
