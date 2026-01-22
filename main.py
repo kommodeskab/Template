@@ -27,10 +27,9 @@ def update_dict(d: dict | list[dict]) -> None:
     """
     if isinstance(d, dict):
         if d.get("_target_", None) == "src.networks.PretrainedModel":
-            project = d["project"]
             id = d["id"]
             model_keyword = d["model_keyword"]
-            model_config = model_config_from_id(project, id, model_keyword)
+            model_config = model_config_from_id(id, model_keyword)
             d.clear()
             d.update(model_config)
         for k, v in d.items():
@@ -52,14 +51,28 @@ def my_app(cfg: DictConfig) -> None:
 
     logger.info("Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False))
 
-    if continue_from_id := cfg.continue_from_id:
-        id = continue_from_id
+    if cfg.continue_from_id:
+        # if 'continue_from_id' is set, we continue from the given id
+        # this requires 'ckpt_filename' to be set as well
+        id = cfg.continue_from_id
         assert cfg.ckpt_filename is not None, "'ckpt_filename' must be provided when continue_from_id is set."
-        ckpt_path = get_ckpt_path(cfg.project_name, id, cfg.ckpt_filename)
-        logger.info(f"Continuing from id: {id} \n --> Using checkpoint path: {ckpt_path}")
+        ckpt_path = get_ckpt_path(id, cfg.ckpt_filename)
+        logger.info(f"Continuing from id: {id}.\n Using checkpoint path: {ckpt_path}")
+        
+    elif cfg.ckpt_filename is not None:
+        # if 'ckpt_filename' is set, we continue from the given checkpoint
+        # in this case, the ckpt_filename should also contain the id where the checkpoint is located
+        id = get_current_time()
+        ckpt_path = cfg.ckpt_filename
+        assert "/" in cfg.ckpt_filename, "'ckpt_filename' must be in the format '<id>/<filename>' when continuing from a specific checkpoint."
+        ckpt_id, filename = cfg.ckpt_filename.split("/")
+        ckpt_path = get_ckpt_path(ckpt_id, filename)
+        logger.info(f"Starting a new run with id: {id}.\n Using checkpoint path: {ckpt_path}")
+        
     else:
-        assert cfg.ckpt_filename is None, "'ckpt_filename' should be None when not continuing from an id."
+        # if neither 'continue_from_id' nor 'ckpt_filename' is set, we start a new experiment
         id, ckpt_path = get_current_time(), None
+        logger.info(f"Starting a new run with id: {id}.")
 
     wandblogger = WandbLogger(
         **cfg.logger,

@@ -8,7 +8,6 @@ class PretrainedModel:
     given a project name, run ID, and model keyword.
 
     Args:
-        project (str): The WandB project name.
         id (str): The WandB run ID.
         model_keyword (str): The keyword to identify the model in the module.
         ckpt_filename (str, optional): The checkpoint filename to load. Defaults to "last".
@@ -16,13 +15,11 @@ class PretrainedModel:
 
     def __new__(
         cls,
-        project: str,
         id: str,
         model_keyword: str,
         ckpt_filename: str = "last",
     ) -> Module:
         return model_from_id(
-            project,
             id,
             model_keyword,
             ckpt_filename,

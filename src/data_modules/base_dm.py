@@ -7,11 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 def split_dataset(
-    train_dataset: Dataset, val_dataset: Optional[Dataset], train_val_split: Optional[float | int] = None
+    train_dataset: Dataset, val_dataset: Optional[Dataset], train_val_split: Optional[float] = None
 ) -> tuple[Dataset, Dataset]:
     if train_val_split is not None:
-        train_dataset, val_dataset = random_split(train_dataset, [train_val_split, 1 - train_val_split])
-
+        trainsize = int(train_val_split * len(train_dataset))
+        train_dataset, val_dataset = random_split(train_dataset, [trainsize, len(train_dataset) - trainsize])
     return train_dataset, val_dataset
 
 
@@ -26,7 +26,7 @@ class BaseDM(pl.LightningDataModule):
         trainset (Dataset): The training dataset.
         valset (Optional[Dataset], optional): The validation dataset. Defaults to None.
         testset (Optional[Dataset], optional): The test dataset. Defaults to None.
-        train_val_split (Optional[float | int], optional): The ratio or number to split the training dataset for validation if 'valset' is None. Defaults to None.
+        train_val_split (Optional[float], optional): The ratio to split the training dataset for validation if 'valset' is None. Defaults to None.
         **kwargs: Additional keyword arguments for the DataLoader.
     """
 
@@ -35,7 +35,7 @@ class BaseDM(pl.LightningDataModule):
         trainset: Dataset,
         valset: Optional[Dataset] = None,
         testset: Optional[Dataset] = None,
-        train_val_split: Optional[float | int] = None,
+        train_val_split: Optional[float] = None,
         **kwargs,
     ):
         """
@@ -43,6 +43,9 @@ class BaseDM(pl.LightningDataModule):
         It takes a dataset and splits into train and validation (if val_dataset is None).
         """
         super().__init__()
+        if valset is None:
+            assert train_val_split is not None, "If no valset is provided, train_val_split must be specified."
+            
         self.trainset, self.valset = split_dataset(trainset, valset, train_val_split)
         self.testset = testset
         self.kwargs = kwargs
@@ -64,7 +67,7 @@ class BaseDM(pl.LightningDataModule):
         return DataLoader(
             dataset=self.valset,
             shuffle=False,
-            drop_last=True,
+            drop_last=False,
             **kwargs,
         )
 
@@ -79,6 +82,6 @@ class BaseDM(pl.LightningDataModule):
         return DataLoader(
             dataset=self.testset,
             shuffle=False,
-            drop_last=True,
+            drop_last=False,
             **kwargs,
         )

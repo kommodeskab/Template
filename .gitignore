@@ -6,6 +6,7 @@
 /wandb
 /configs/experiment/test*
 /configs/my_experiment/*
+/latex/refs.bib
 
 
 # ruff cache

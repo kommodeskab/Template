@@ -30,4 +30,5 @@ class DummyModule(BaseLightningModule):
             loss=loss["loss"],
             loss_output=loss,
             model_output=output,
+            module=self,
         )

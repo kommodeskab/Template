@@ -5,6 +5,7 @@ from torch.optim import Optimizer
 from torch.optim.lr_scheduler import LRScheduler
 from matplotlib.figure import Figure
 import numpy as np
+from pytorch_lightning import LightningModule
 
 TensorDict = Dict[str, Tensor]
 OptimizerType = Optional[partial[Optimizer]]
@@ -29,3 +30,4 @@ class StepOutput(TypedDict):
     loss: Tensor
     model_output: Optional[ModelOutput] = None
     loss_output: Optional[LossOutput] = None
+    module: Optional[LightningModule] = None

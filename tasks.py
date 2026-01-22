@@ -88,20 +88,31 @@ def build(c: Context):
     """Build (sync) the environment from pyproject.toml."""
     c.run("echo Syncing the environment...")
     c.run("uv sync")
-    # make .env file
-    c.run("echo Creating .env file...")
-    with open(".env", "w") as f:
-        f.write("DATA_PATH=...\n")
-        f.write("WANDB_ENTITY=...\n")
-        f.write("WANDB_API_KEY=...\n")
-        f.write("ZOTERO_API_KEY=...\n")
-        f.write("HF_TOKEN=...\n")
-        f.write("GEMINI_API_KEY=...\n")
-        f.write("GOOGLE_API_KEY=...\n")
-        f.write("GOOGLE_CLOUD_PROJECT=...\n")
-        f.write("GOOGLE_CLOUD_LOCATION=global\n")
-        f.write("GOOGLE_GENAI_USE_VERTEXAI=True\n")
-
+    
+    items = {
+        "DATA_PATH": "...",
+        "WANDB_ENTITY": "...",
+        "WANDB_API_KEY": "...",
+        "ZOTERO_API_KEY": "...",
+        "ZOTERO_USER_ID": "...",
+        "PAPER_PATH": "...",
+    }
+    
+    # create .env if it doesn't exist
+    if not os.path.exists(".env"):
+        with open(".env", "w") as f: ...
+    
+    # read current variables
+    curr_vars = {}
+    for line in open(".env"):
+        key, _, value = line.partition("=")
+        curr_vars[key] = value.strip()
+    
+    # insert missing variables as placeholders
+    with open(".env", "a") as f:
+        for key, placeholder in items.items():
+            if key not in curr_vars:
+                f.write(f"{key}={placeholder}\n")
 
 @task
 def update(c: Context):
