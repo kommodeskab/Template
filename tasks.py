@@ -1,5 +1,11 @@
 from invoke import task, Context
 from typing import Optional
+import os
+
+
+os.makedirs("logs/wandb", exist_ok=True)
+os.makedirs("logs/hpc", exist_ok=True)
+os.makedirs("data", exist_ok=True)
 
 
 @task
@@ -11,26 +17,49 @@ def stopcontainers(c: Context):
 
 @task
 def cleandocker(c: Context, all: bool = False):
-    """Remove (unused) Docker containers, images, and volumes. Pass -all to remove everything."""
+    """Remove (unused) Docker containers, images, and volumes. Pass --all to remove everything."""
     c.run(f"docker system prune {'-a' if all else ''}")
 
 
 @task
-def image(c: Context):
+def image(c: Context, gpu: bool = False):
     """Build the Docker development container image."""
-    c.run("docker build -f .devcontainer/Dockerfile -t main-image .")
+    if gpu:
+        # Verify NVIDIA Docker runtime is available
+        result = c.run("docker info | grep -i nvidia", warn=True, hide=True)
+        if not result or result.failed:
+            print("Warning: NVIDIA Docker runtime not detected!")
+            print("Make sure nvidia-docker2 is installed and Docker daemon is configured.")
+            print("Discontinuing...")
+            return
+        c.run("docker build -f .devcontainer/gpu.dockerfile -t main-image-gpu .")
+    else:
+        c.run("docker build -f .devcontainer/Dockerfile -t main-image .")
 
 
 @task
-def dockermain(c: Context, extra: str = ""):
+def dockermain(c: Context, image_name: str = "", gpu: bool = False, extra: str = ""):
     """Run main.py inside the Docker development container. Specify the 'extra' argument to add extra command line arguments."""
-    c.run(
-        "docker run --rm "
-        "-v $(pwd):/app "
-        "-v uv-venv:/app/.venv "
-        "-v uv-cache:/root/.cache/uv "
-        f"main-image {extra}"
-    )
+    if gpu:
+        if image_name == "":
+            image_name = "main-image-gpu"
+        c.run(
+            "docker run --gpus all --rm "
+            "-v $(pwd):/app "
+            "-v uv-venv:/app/.venv "
+            "-v uv-cache:/root/.cache/uv "
+            f"{image_name} {extra}"
+        )
+    else:
+        if image_name == "":
+            image_name = "main-image"
+        c.run(
+            "docker run --rm "
+            "-v $(pwd):/app "
+            "-v uv-venv:/app/.venv "
+            "-v uv-cache:/root/.cache/uv "
+            f"{image_name} {extra}"
+        )
 
 
 @task
@@ -59,17 +88,19 @@ def build(c: Context):
     """Build (sync) the environment from pyproject.toml."""
     c.run("echo Syncing the environment...")
     c.run("uv sync")
-
-    # also make required directories
-    c.run("mkdir -p logs hpc data")
-
     # make .env file
     c.run("echo Creating .env file...")
     with open(".env", "w") as f:
         f.write("DATA_PATH=...\n")
+        f.write("WANDB_ENTITY=...\n")
         f.write("WANDB_API_KEY=...\n")
         f.write("ZOTERO_API_KEY=...\n")
-    c.run("echo .env file created with WANDB_API_KEY and ZOTERO_API_KEY variables.")
+        f.write("HF_TOKEN=...\n")
+        f.write("GEMINI_API_KEY=...\n")
+        f.write("GOOGLE_API_KEY=...\n")
+        f.write("GOOGLE_CLOUD_PROJECT=...\n")
+        f.write("GOOGLE_CLOUD_LOCATION=global\n")
+        f.write("GOOGLE_GENAI_USE_VERTEXAI=True\n")
 
 
 @task
@@ -87,19 +118,21 @@ def update(c: Context):
 @task
 def submit(
     c: Context,
-    experiment="",
+    command: str,
+    jobname: str,
     gpu="gpuv100",
     ngpus=1,
     ncores=4,
     mem=4,
     walltime="3:00",
-    jobname=None,
 ):
+    # make sure "logs/hpc" exists
+
     """
     Submit a training job to HPC using bsub.
 
     Args:
-        experiment: Name of the experiment config (without .yaml)
+        command: The command to run in the job
         gpu: GPU type (gpuv100 or gpua100)
         ngpus: Number of GPUs to request
         ncores: Number of CPU cores
@@ -108,15 +141,10 @@ def submit(
         jobname: Custom job name (defaults to experiment name)
 
     Example:
-        invoke submit --experiment=template
-        invoke submit --experiment=myexp --gpu=gpua100 --walltime=24:00
+        >>> invoke submit --command="python main.py +experiment=dummy +trainer.max_steps=100" --gpu=gpua100 --walltime=24:00
     """
     import tempfile
     import os
-
-    # Use experiment name as2 job name if not provided
-    if jobname is None:
-        jobname = experiment
 
     # Create a temporary bash script with the specified parameters
     script_content = f"""#!/bin/sh
@@ -140,12 +168,11 @@ def submit(
 
     # walltime
     #BSUB -W {walltime}
-    #BSUB -o hpc/output_%J.out
-    #BSUB -e hpc/error_%J.err
+    #BSUB -o logs/hpc/output_%J.out
+    #BSUB -e logs/hpc/error_%J.err
 
-    module load python3/3.12.4
     source .venv/bin/activate
-    python main.py {experiment}
+    {command}
     """
 
     # Write to temporary file
@@ -156,11 +183,26 @@ def submit(
     try:
         # Submit the job
         c.run(f"bsub < {temp_script}")
-        print(f"\n✓ Job '{jobname}' submitted with experiment={experiment}")
+        print(f"\n✓ Job '{jobname}' submitted with command:\n  {command}")
         print(f"  GPU: {gpu}, Cores: {ncores}, Memory: {mem}G, Walltime: {walltime}")
     finally:
         # Clean up temporary file
         os.unlink(temp_script)
+
+
+@task
+def submit_experiment(
+    c: Context,
+    experiment: str,
+    jobname: str,
+    gpu="gpuv100",
+    ngpus=1,
+    ncores=4,
+    mem=4,
+    walltime="3:00",
+):
+    command = f"uv run python main.py {experiment}"
+    submit(c, command, jobname, gpu, ngpus, ncores, mem, walltime)
 
 
 @task
@@ -173,6 +215,56 @@ def status(c: Context, user=None):
 
 
 @task
+def buildsweep(c: Context, name: str):
+    """
+    Initialize a Weights & Biases sweep from a YAML configuration file.
+
+    Args:
+        name (str): Name of the sweep configuration file (without .yaml extension)
+    """
+    # initialize the sweep
+    c.run(f"WANDB_DIR=logs uv run wandb sweep configs/sweeps/{name}.yaml")
+
+
+@task
+def runsweep(c: Context, name: str):
+    """
+    Run a Weights & Biases sweep agent for the specified sweep ID.
+
+    Args:
+        name (str): The name of the sweep to run the agent for
+    """
+    c.run(f"WANDB_DIR=logs uv run wandb agent {name}")
+
+
+@task
+def submitsweep(
+    c: Context,
+    name: str,
+    jobname: str,
+    gpu="gpuv100",
+    ngpus=1,
+    ncores=4,
+    mem=4,
+    walltime="3:00",
+):
+    """Submit a Weights & Biases sweep agent as an HPC job.
+
+    Args:
+        c (Context): _invoke_ context
+        name (str): The name of the sweep to run the agent for
+        jobname (str): The name of the HPC job
+        gpu (str, optional): GPU type (gpuv100 or gpua100). Defaults to "gpuv100".
+        ngpus (int, optional): Number of GPUs to request. Defaults to 1.
+        ncores (int, optional): Number of CPU cores. Defaults to 4.
+        mem (int, optional): Memory per core in GB. Defaults to 4.
+        walltime (str, optional): Wall time in HH:MM format. Defaults to "3:00".
+    """
+    command = f"WANDB_DIR=logs uv run wandb agent {name}"
+    submit(c, command, jobname, gpu, ngpus, ncores, mem, walltime)
+
+
+@task
 def logs(c: Context, jobid=None, tail=50):
     """
     View logs from HPC jobs.
@@ -182,12 +274,19 @@ def logs(c: Context, jobid=None, tail=50):
         tail: Number of lines to show (default: 50)
     """
     if jobid:
-        c.run(f"tail -n {tail} hpc/output_{jobid}.out")
+        c.run(f"tail -n {tail} logs/hpc/output_{jobid}.out")
         print("\n--- Errors ---")
-        c.run(f"tail -n {tail} hpc/error_{jobid}.err", warn=True)
+        c.run(f"tail -n {tail} logs/hpc/error_{jobid}.err", warn=True)
     else:
         # Show most recent log files
         print("Most recent output:")
-        c.run(f"ls -t hpc/output_*.out | head -1 | xargs tail -n {tail}", warn=True)
+        c.run(f"ls -t logs/hpc/output_*.out | head -1 | xargs tail -n {tail}", warn=True)
         print("\nMost recent errors:")
-        c.run(f"ls -t hpc/error_*.err | head -1 | xargs tail -n {tail}", warn=True)
+        c.run(f"ls -t logs/hpc/error_*.err | head -1 | xargs tail -n {tail}", warn=True)
+
+
+@task
+def coverage(c: Context):
+    """Generate code coverage report."""
+    c.run("coverage run -m pytest")
+    c.run("coverage report -m")

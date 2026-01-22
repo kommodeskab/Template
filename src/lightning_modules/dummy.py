@@ -23,12 +23,11 @@ class DummyModule(BaseLightningModule):
         output = self.network(batch["input"])
         return ModelOutput(output=output)
 
-    def common_step(self, batch: Batch, batch_idx: int) -> ModelOutput:
+    def common_step(self, batch: Batch, batch_idx: int) -> StepOutput:
         output = self.forward(batch)
         loss = self.loss_fn(output, batch)
         return StepOutput(
             loss=loss["loss"],
-            batch=batch,
             loss_output=loss,
             model_output=output,
         )

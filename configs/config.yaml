@@ -8,9 +8,10 @@ compile: False # compile makes training faster, but has slow startup time. Only 
 phase: train
 
 defaults:
+  - _self_
   - trainer: ???
   - data: ???
   - model: ???
   - callbacks: ???
   - logger: ???
-  - _self_
+  - experiment: null

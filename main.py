@@ -78,7 +78,6 @@ def my_app(cfg: DictConfig) -> None:
     logger.info("Instantiating model and datamodule..")
     datamodule: LightningDataModule = hydra.utils.instantiate(cfg.data)
     model: LightningModule = hydra.utils.instantiate(cfg.model)
-    wandblogger.watch(model, log="all", log_freq=100)
 
     if cfg.compile:
         logger.info("Compiling model..")

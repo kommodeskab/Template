@@ -9,6 +9,16 @@ logger = logging.getLogger(__name__)
 
 
 class EMACallback(Callback):
+    """
+    Exponential Moving Average (EMA) Callback for PyTorch Lightning.
+    This callback maintains an exponential moving average of the model parameters during training.
+    The EMA weights are used during validation to improve performance and stability.
+    The EMA state is saved and loaded with the model checkpoint.
+
+    Args:
+        decay (float): The decay rate for the EMA. Default is 0.999.
+    """
+
     def __init__(
         self,
         decay: float = 0.999,

@@ -2,3 +2,4 @@ defaults:
   - learningratemonitor
   - logloss
   - modelcheckpoint
+  - loggrad

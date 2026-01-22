@@ -3,6 +3,10 @@
 /hpc
 /playgrounds
 /data
+/wandb
+/configs/experiment/test*
+/configs/my_experiment/*
+
 
 # ruff cache
 /.ruff_cache

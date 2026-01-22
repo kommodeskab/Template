@@ -16,6 +16,20 @@ def split_dataset(
 
 
 class BaseDM(pl.LightningDataModule):
+    """
+    A base data module for datasets.
+    If no validation dataset is provided, it splits the training dataset into
+    training and validation sets based on the provided 'train_val_split' ratio.
+    The validation and test dataloaders are created without shuffling and drop_last.
+
+    Args:
+        trainset (Dataset): The training dataset.
+        valset (Optional[Dataset], optional): The validation dataset. Defaults to None.
+        testset (Optional[Dataset], optional): The test dataset. Defaults to None.
+        train_val_split (Optional[float | int], optional): The ratio or number to split the training dataset for validation if 'valset' is None. Defaults to None.
+        **kwargs: Additional keyword arguments for the DataLoader.
+    """
+
     def __init__(
         self,
         trainset: Dataset,
