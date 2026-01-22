@@ -13,9 +13,12 @@ LRSchedulerType = Optional[dict[str, partial[LRScheduler] | str]]
 ImageType = list[Tensor | Figure | np.ndarray]
 
 
-class Batch(TypedDict):
+class Sample(TypedDict):
     input: Tensor
     target: Tensor
+
+
+class Batch(Sample): ...
 
 
 class ModelOutput(TypedDict):

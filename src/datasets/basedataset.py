@@ -1,6 +1,6 @@
 from torch.utils.data import Dataset
 import hashlib
-from src import Batch
+from src import Sample
 import os
 from dotenv import load_dotenv
 
@@ -38,5 +38,5 @@ class BaseDataset(Dataset):
     def __len__(self) -> int:
         raise NotImplementedError("Length method not implemented")
 
-    def __getitem__(self, index: int) -> Batch:
+    def __getitem__(self, index: int) -> Sample:
         raise NotImplementedError("Get item method not implemented")

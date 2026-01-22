@@ -1,6 +1,6 @@
 import torch
 from src.datasets import BaseDataset
-from src import Batch
+from src import Sample
 
 
 class DummyDataset(BaseDataset):
@@ -13,11 +13,11 @@ class DummyDataset(BaseDataset):
     def __len__(self) -> int:
         return self.size
 
-    def __getitem__(self, index: int) -> Batch:
+    def __getitem__(self, index: int) -> Sample:
         # this is totally random data so the model won't learn anything useful
         input = torch.randn(10)  # Example data: a random tensor of size 10
         target = torch.randn(1)  # Example target: a random tensor of size 1
-        return Batch(input=input, target=target)
+        return Sample(input=input, target=target)
 
 
 if __name__ == "__main__":
