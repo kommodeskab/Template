@@ -70,5 +70,8 @@ known-third-party = ["wandb", "hydra"]
 disable_error_code = ["override", "assignment"]
 ignore_missing_imports = true
 
+[tool.coverage.report]
+omit = ["/tmp/*"]
+
 [tool.ruff]
 line-length=120
