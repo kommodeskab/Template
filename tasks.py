@@ -1,6 +1,7 @@
 from invoke import task, Context
 from typing import Optional
 import os
+from pathlib import Path
 
 
 os.makedirs("logs/wandb", exist_ok=True)
@@ -84,12 +85,12 @@ def python(ctx: Context):
 
 
 @task
-def build(c: Context):
-    """Build (sync) the environment from pyproject.toml."""
-    c.run("echo Syncing the environment...")
+def build(c: Context) -> None:
+    """Build (sync) the environment and initialize .env placeholders."""
+    c.run("echo 'Syncing the environment...'")
     c.run("uv sync")
-    c.run("pre-commit install")
 
+    env_path = Path(".env")
     items = {
         "DATA_PATH": "...",
         "WANDB_ENTITY": "...",
@@ -100,35 +101,21 @@ def build(c: Context):
         "HF_TOKEN": "...",
     }
 
-    # create .env if it doesn't exist
-    if not os.path.exists(".env"):
-        with open(".env", "w") as f:
-            ...
+    curr_vars = set()
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                key, _, _ = line.partition("=")
+                curr_vars.add(key.strip())
 
-    # read current variables
-    curr_vars = {}
-    for line in open(".env"):
-        key, _, value = line.partition("=")
-        curr_vars[key] = value.strip()
+    missing_items = {k: v for k, v in items.items() if k not in curr_vars}
 
-    # insert missing variables as placeholders
-    with open(".env", "a") as f:
-        for key, placeholder in items.items():
-            if key not in curr_vars:
-                f.write(f"{key}={placeholder}\n")
-
-
-@task
-def update(c: Context):
-    """
-    Auto-detect imports and update pyproject.toml.
-    WARNING: This may overwrite manual version constraints.
-    """
-    c.run("echo Detecting dependencies from source code...")
-    c.run("uvx pipreqs --force --ignore .venv")
-    c.run("uv add -r requirements.txt")
-    c.run("rm requirements.txt")
-
+    if missing_items:
+        with env_path.open("a", encoding="utf-8") as f:
+            for key, val in missing_items.items():
+                f.write(f"{key}={val}\n")
+                
 
 @task
 def submit(

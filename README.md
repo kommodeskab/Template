@@ -12,12 +12,6 @@ uvx invoke build
 
 Add relevant API keys and paths (local data path, Weights & Biases, Hugging Face, etc.).
 
-### (Optional) Install pre-commit
-
-```bash
-pip install pre-commit
-```
-
 ## Running Experiments
 
 - Run an experiment:

@@ -2,7 +2,7 @@ from omegaconf import DictConfig
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 from omegaconf import OmegaConf
-from src.utils import (
+from src.module_name.utils import (
     instantiate_callbacks,
     get_ckpt_path,
     model_config_from_id,
