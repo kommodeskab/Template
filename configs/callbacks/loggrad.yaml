@@ -1,2 +1,2 @@
 log_grads_callback:
-  _target_: src.callbacks.LogGradsCallback
+  _target_: module_name.callbacks.LogGradsCallback

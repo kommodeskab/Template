@@ -9,13 +9,23 @@ requires-python = ">=3.10"
 dependencies = [
     "torch",
     "pytorch-lightning",
-    "tyro",
     "wandb",
     "invoke",
     "dotenv",
     "pytest",
     "pre-commit",
+    "matplotlib",
+    "omegaconf",
+    "hydra-core",
+    "torch-ema>=0.3",
+    "torchview>=0.2.7",
 ]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[dependency-groups]
+dev = [
+    "mypy>=2.1.0",
+    "ruff>=0.15.15",
+]

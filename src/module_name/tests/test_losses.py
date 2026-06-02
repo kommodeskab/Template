@@ -1,5 +1,5 @@
-from src.module_name.losses import MSELoss
-from src.module_name import ModelOutput, Batch
+from module_name.losses import MSELoss
+from module_name import ModelOutput, Batch
 import torch
 
 

@@ -1,5 +1,5 @@
-from src.module_name.lightning_modules import BaseLightningModule
-from src.module_name import StepOutput, TensorDict, Batch
+from module_name.lightning_modules import BaseLightningModule
+from module_name import StepOutput, TensorDict, Batch
 import torch
 from typing import Optional
 

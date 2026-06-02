@@ -1,21 +1,22 @@
 import os
-import hydra
-from omegaconf import DictConfig
 from datetime import datetime
 import wandb
 import random
 import numpy as np
 import torch
-from hydra.utils import instantiate
 import torch.nn as nn
-from pytorch_lightning.callbacks import Callback
 import tempfile
 import shutil
 import logging
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, Dataset
-from src.module_name import Batch
+from module_name import Batch
 from contextlib import contextmanager, nullcontext, AbstractContextManager
+from omegaconf import DictConfig
+from pytorch_lightning import Callback
+import hydra
+from typing import Optional
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +41,9 @@ def temporary_seed(seed: int):
 
     # CUDA RNG state is unsafe to access from forked DataLoader workers.
     in_worker = torch.utils.data.get_worker_info() is not None
-    use_cuda_state = torch.cuda.is_available() and torch.cuda.is_initialized() and not in_worker
+    use_cuda_state = (
+        torch.cuda.is_available() and torch.cuda.is_initialized() and not in_worker
+    )
     cuda_state = torch.cuda.get_rng_state() if use_cuda_state else None
 
     try:
@@ -83,6 +86,48 @@ def get_current_time() -> str:
     return now.strftime("%d%m%y%H%M%S")
 
 
+def get_environment_variable(var_name: str, default_value: Optional[str] = None) -> str:
+    """
+    Returns the value of an environment variable.
+
+    Args:
+        var_name (str): The name of the environment variable.
+        default_value (Optional[str], optional): The default value to return if the environment variable is not set. Defaults to None.
+
+    Returns:
+        str: The value of the environment variable or the default value if it is not set.
+    """
+    return os.getenv(var_name, default_value)
+
+
+def get_data_path() -> Path:
+    return Path(get_environment_variable("DATA_PATH"))
+
+
+def get_logs_path() -> Path:
+    return Path(get_environment_variable("LOGS_PATH"))
+
+
+def project_from_id(id: str) -> str:
+    """
+    Returns the project name for a specific WandB run ID.
+
+    Args:
+        id (str): The run ID
+    Returns:
+        str: The project name for the specified run ID.
+    """
+    project_names = wandb.Api().projects()
+    project_names = [project.name for project in project_names]
+    for project_name in project_names:
+        runs = wandb.Api().runs(project_name)
+        run_ids = [run.id for run in runs]
+        if id in run_ids:
+            return project_name
+
+    raise ValueError(f"Could not find project for experiment id '{id}'.")
+
+
 def instantiate_callbacks(callback_cfg: DictConfig | None) -> list[Callback]:
     """
     Function for instantiating callbacks given a `DictConfig`.
@@ -105,26 +150,6 @@ def instantiate_callbacks(callback_cfg: DictConfig | None) -> list[Callback]:
         callbacks.append(callback)
 
     return callbacks
-
-
-def project_from_id(id: str) -> str:
-    """
-    Returns the project name for a specific WandB run ID.
-
-    Args:
-        id (str): The run ID
-    Returns:
-        str: The project name for the specified run ID.
-    """
-    project_names = wandb.Api().projects()
-    project_names = [project.name for project in project_names]
-    for project_name in project_names:
-        runs = wandb.Api().runs(project_name)
-        run_ids = [run.id for run in runs]
-        if id in run_ids:
-            return project_name
-
-    raise ValueError(f"Could not find project for experiment id '{id}'.")
 
 
 def wandb_entity() -> str:
@@ -279,7 +304,7 @@ def module_from_id(
 
     config = config_from_id(id)
     model_config = config["model"]
-    module: pl.LightningModule = instantiate(model_config)
+    module: pl.LightningModule = hydra.utils.instantiate(model_config)
 
     ckpt_path = get_ckpt_path(id, ckpt_filename)
     ckpt = torch.load(ckpt_path, map_location="cpu", weights_only=True)
@@ -376,7 +401,9 @@ def download_checkpoint(
         # The file inside the artifact is named 'model.ckpt' (see modelcheckpoint.py)
         source_path = os.path.join(temp_dir, "model.ckpt")
 
-        assert not os.path.exists(final_path), f"Checkpoint already exists at {final_path}."
+        assert not os.path.exists(
+            final_path
+        ), f"Checkpoint already exists at {final_path}."
 
         # Move and rename to the final destination
         shutil.move(source_path, final_path)
@@ -385,7 +412,9 @@ def download_checkpoint(
     return final_path
 
 
-def get_batch_from_dataset(dataset: Dataset, batch_size: int, shuffle: bool = False) -> Batch:
+def get_batch_from_dataset(
+    dataset: Dataset, batch_size: int, shuffle: bool = False
+) -> Batch:
     """
     Returns a single batch of a given size from the dataset.
     This is useful for quickly getting a batch, e.g. for testing purposes.

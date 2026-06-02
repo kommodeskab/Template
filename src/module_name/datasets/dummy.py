@@ -1,6 +1,6 @@
 import torch
-from src.module_name.datasets import BaseDataset
-from src.module_name import Sample
+from module_name.datasets import BaseDataset
+from module_name import Sample
 
 
 class DummyDataset(BaseDataset):

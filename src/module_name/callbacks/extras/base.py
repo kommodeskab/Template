@@ -1,5 +1,5 @@
-from src.module_name.lightning_modules import BaseLightningModule
-from src.module_name import StepOutput, TensorDict, Batch
+from module_name.lightning_modules import BaseLightningModule
+from module_name import StepOutput, TensorDict, Batch
 import torch
 
 
@@ -12,6 +12,10 @@ class ExtraMetricOutput:
     """
 
     def __call__(
-        self, pl_module: BaseLightningModule, outputs: StepOutput, batch: Batch, batch_idx: int
+        self,
+        pl_module: BaseLightningModule,
+        outputs: StepOutput,
+        batch: Batch,
+        batch_idx: int,
     ) -> TensorDict: ...
     def to(self, device: torch.device) -> None: ...

@@ -1,8 +1,8 @@
 from pytorch_lightning import Callback
 from typing import Optional
-from src.module_name.lightning_modules import BaseLightningModule
+from module_name.lightning_modules import BaseLightningModule
 import pytorch_lightning as pl
-from src.module_name import Batch, StepOutput
+from module_name import Batch, StepOutput
 import time
 import logging
 import torch
@@ -48,7 +48,9 @@ class StopTrainingCallback(Callback):
         wandb.finish()
         raise KeyboardInterrupt(f"Training stopped by StopTrainingCallback: {reason}")
 
-    def on_train_start(self, trainer: pl.Trainer, pl_module: BaseLightningModule) -> None:
+    def on_train_start(
+        self, trainer: pl.Trainer, pl_module: BaseLightningModule
+    ) -> None:
         if self.max_num_params is not None:
             num_params = sum(p.numel() for p in pl_module.parameters())
             if num_params > self.max_num_params:
@@ -57,7 +59,11 @@ class StopTrainingCallback(Callback):
                 )
 
     def on_train_batch_start(
-        self, trainer: pl.Trainer, pl_module: BaseLightningModule, batch: Batch, batch_idx: int
+        self,
+        trainer: pl.Trainer,
+        pl_module: BaseLightningModule,
+        batch: Batch,
+        batch_idx: int,
     ) -> None:
         # measure the time it takes to process a train batch
         # measure on the second batch, to avoid measuring the time it takes to load the data
@@ -68,7 +74,12 @@ class StopTrainingCallback(Callback):
             self.batch_start_time = time.time()
 
     def on_train_batch_end(
-        self, trainer: pl.Trainer, pl_module: BaseLightningModule, outputs: StepOutput, batch: Batch, batch_idx: int
+        self,
+        trainer: pl.Trainer,
+        pl_module: BaseLightningModule,
+        outputs: StepOutput,
+        batch: Batch,
+        batch_idx: int,
     ) -> None:
         if self.max_batch_time is not None and batch_idx == 1:
             if torch.cuda.is_available():
@@ -84,11 +95,19 @@ class StopTrainingCallback(Callback):
     def _is_oom(exception: BaseException) -> bool:
         if isinstance(exception, torch.cuda.OutOfMemoryError):
             return True
-        if isinstance(exception, RuntimeError) and "out of memory" in str(exception).lower():
+        if (
+            isinstance(exception, RuntimeError)
+            and "out of memory" in str(exception).lower()
+        ):
             return True
 
         return False
 
-    def on_exception(self, trainer: pl.Trainer, pl_module: BaseLightningModule, exception: BaseException) -> None:
+    def on_exception(
+        self,
+        trainer: pl.Trainer,
+        pl_module: BaseLightningModule,
+        exception: BaseException,
+    ) -> None:
         if self.catch_oom and self._is_oom(exception):
             self._stop_training(reason="CUDA out of memory error occurred.")

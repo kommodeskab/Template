@@ -2,7 +2,7 @@ from pytorch_lightning import Callback
 import pytorch_lightning as pl
 import torch.nn as nn
 import wandb
-from src.module_name.lightning_modules.baselightningmodule import BaseLightningModule
+from module_name.lightning_modules.baselightningmodule import BaseLightningModule
 
 
 class ParameterCountCallback(Callback):
@@ -38,7 +38,9 @@ class ParameterCountCallback(Callback):
 
         return counts
 
-    def on_train_start(self, trainer: pl.Trainer, pl_module: BaseLightningModule) -> None:
+    def on_train_start(
+        self, trainer: pl.Trainer, pl_module: BaseLightningModule
+    ) -> None:
         params = self.collect_counts(pl_module)
 
         # log a bar plot for each depth level
@@ -51,7 +53,10 @@ class ParameterCountCallback(Callback):
             pl_module.logger.log_metrics(
                 {
                     f"Parameters/Depth {depth}": wandb.plot.bar(
-                        table, "module", "parameters", title=f"Parameters at depth {depth}"
+                        table,
+                        "module",
+                        "parameters",
+                        title=f"Parameters at depth {depth}",
                     )
                 }
             )

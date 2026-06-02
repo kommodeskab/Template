@@ -3,9 +3,9 @@ from pytorch_lightning.loggers import WandbLogger
 from torch import nn
 import torch.nn.init as init
 import torch
-from src.module_name.data_modules import BaseDM
-from src.module_name import OptimizerType, LRSchedulerType, Batch, ModelOutput, ImageType
-from src.module_name.utils import temporary_seed
+from module_name.data_modules import BaseDM
+from module_name import OptimizerType, LRSchedulerType, Batch, ModelOutput, ImageType
+from module_name.utils import temporary_seed
 from torch.utils.data import Dataset
 from typing import Optional
 
@@ -91,8 +91,12 @@ class BaseLightningModule(pl.LightningModule):
             return self.common_step(batch, batch_idx)
 
     def configure_optimizers(self):
-        assert self.partial_optimizer is not None, "Optimizer must be provided during training."
-        assert self.partial_lr_scheduler is not None, "Learning rate scheduler must be provided during training."
+        assert (
+            self.partial_optimizer is not None
+        ), "Optimizer must be provided during training."
+        assert (
+            self.partial_lr_scheduler is not None
+        ), "Learning rate scheduler must be provided during training."
 
         optim = self.partial_optimizer(self.parameters())
         scheduler = self.partial_lr_scheduler.pop("scheduler")(optim)

@@ -1,5 +1,5 @@
 stop_training:
-  _target_: src.callbacks.StopTrainingCallback
+  _target_: module_name.callbacks.StopTrainingCallback
   key: "val_loss"
   value: 100_000 # log some very high value to mark run as "bad"
   max_num_params: 200_000_000

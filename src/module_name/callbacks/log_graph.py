@@ -1,7 +1,7 @@
 from torchview import draw_graph
 from pytorch_lightning.callbacks import Callback
 import pytorch_lightning as pl
-from src.module_name.lightning_modules.baselightningmodule import BaseLightningModule
+from module_name.lightning_modules.baselightningmodule import BaseLightningModule
 import torch
 from PIL import Image
 import io
@@ -19,7 +19,9 @@ class LogGraphCallback(Callback):
         self.input_shape = input_shape
         self.depth = depth
 
-    def on_train_start(self, trainer: pl.Trainer, pl_module: BaseLightningModule) -> None:
+    def on_train_start(
+        self, trainer: pl.Trainer, pl_module: BaseLightningModule
+    ) -> None:
         if hasattr(self, "has_logged"):
             return
 

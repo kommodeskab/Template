@@ -1,5 +1,5 @@
-from src.module_name.data_modules import BaseDM
-from src.module_name.datasets import DummyDataset
+from module_name.data_modules import BaseDM
+from module_name.datasets import DummyDataset
 import pytest
 
 

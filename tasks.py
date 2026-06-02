@@ -2,65 +2,7 @@ from invoke import task, Context
 from typing import Optional
 import os
 from pathlib import Path
-
-
-os.makedirs("logs/wandb", exist_ok=True)
-os.makedirs("logs/hpc", exist_ok=True)
-os.makedirs("data", exist_ok=True)
-
-
-@task
-def stopcontainers(c: Context):
-    """Stop all Docker containers."""
-    c.run("echo Stopping following containers:")
-    c.run("docker stop $(docker ps -q)")
-
-
-@task
-def cleandocker(c: Context, all: bool = False):
-    """Remove (unused) Docker containers, images, and volumes. Pass --all to remove everything."""
-    c.run(f"docker system prune {'-a' if all else ''}")
-
-
-@task
-def image(c: Context, gpu: bool = False):
-    """Build the Docker development container image."""
-    if gpu:
-        # Verify NVIDIA Docker runtime is available
-        result = c.run("docker info | grep -i nvidia", warn=True, hide=True)
-        if not result or result.failed:
-            print("Warning: NVIDIA Docker runtime not detected!")
-            print("Make sure nvidia-docker2 is installed and Docker daemon is configured.")
-            print("Discontinuing...")
-            return
-        c.run("docker build -f .devcontainer/gpu.dockerfile -t main-image-gpu .")
-    else:
-        c.run("docker build -f .devcontainer/Dockerfile -t main-image .")
-
-
-@task
-def dockermain(c: Context, image_name: str = "", gpu: bool = False, extra: str = ""):
-    """Run main.py inside the Docker development container. Specify the 'extra' argument to add extra command line arguments."""
-    if gpu:
-        if image_name == "":
-            image_name = "main-image-gpu"
-        c.run(
-            "docker run --gpus all --rm "
-            "-v $(pwd):/app "
-            "-v uv-venv:/app/.venv "
-            "-v uv-cache:/root/.cache/uv "
-            f"{image_name} {extra}"
-        )
-    else:
-        if image_name == "":
-            image_name = "main-image"
-        c.run(
-            "docker run --rm "
-            "-v $(pwd):/app "
-            "-v uv-venv:/app/.venv "
-            "-v uv-cache:/root/.cache/uv "
-            f"{image_name} {extra}"
-        )
+from module_name.utils import get_data_path, get_logs_path
 
 
 @task
@@ -78,6 +20,12 @@ def typing(c: Context, filename: Optional[str] = None):
 
 
 @task
+def test(c: Context):
+    """Run tests using pytest."""
+    c.run("uv run pytest src/module_name/tests")
+
+
+@task
 def python(ctx: Context):
     """ """
     ctx.run("which python")
@@ -89,6 +37,7 @@ def build(c: Context) -> None:
     """Build (sync) the environment and initialize .env placeholders."""
     c.run("echo 'Syncing the environment...'")
     c.run("uv sync")
+    c.run("pre-commit install")
 
     env_path = Path(".env")
     items = {
@@ -115,7 +64,15 @@ def build(c: Context) -> None:
         with env_path.open("a", encoding="utf-8") as f:
             for key, val in missing_items.items():
                 f.write(f"{key}={val}\n")
-                
+
+    # get the DATA_PATH and make the folder if it doesn't exist
+    data_path = get_data_path()
+    os.makedirs(data_path, exist_ok=True)
+
+    logs_path = get_logs_path()
+    os.makedirs(logs_path / "wandb", exist_ok=True)
+    os.makedirs(logs_path / "hpc", exist_ok=True)
+
 
 @task
 def submit(
@@ -282,7 +239,9 @@ def logs(c: Context, jobid=None, tail=50):
     else:
         # Show most recent log files
         print("Most recent output:")
-        c.run(f"ls -t logs/hpc/output_*.out | head -1 | xargs tail -n {tail}", warn=True)
+        c.run(
+            f"ls -t logs/hpc/output_*.out | head -1 | xargs tail -n {tail}", warn=True
+        )
         print("\nMost recent errors:")
         c.run(f"ls -t logs/hpc/error_*.err | head -1 | xargs tail -n {tail}", warn=True)
 

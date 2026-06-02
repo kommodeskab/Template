@@ -1,5 +1,5 @@
 from .baseloss import BaseLossFunction
-from src.module_name import Batch, ModelOutput, LossOutput
+from module_name import Batch, ModelOutput, LossOutput
 import torch.nn as nn
 
 

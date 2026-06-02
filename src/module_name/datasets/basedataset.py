@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import Dataset
 import hashlib
-from src.module_name import Sample
+from module_name import Sample
 import os
 from dotenv import load_dotenv
 

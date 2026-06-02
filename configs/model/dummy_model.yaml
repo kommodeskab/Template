@@ -1,12 +1,12 @@
-_target_: src.lightning_modules.DummyModule
+_target_: module_name.lightning_modules.DummyModule
 
 network:
-  _target_: src.networks.DummyNetwork
+  _target_: module_name.networks.DummyNetwork
   input_size: 10
   output_size: 1
 
 loss_fn:
-  _target_: src.losses.MSELoss
+  _target_: module_name.losses.MSELoss
 
 defaults:
   - /optimizer: adamw

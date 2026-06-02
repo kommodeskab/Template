@@ -1,10 +1,10 @@
 from pytorch_lightning import Callback
-from src.module_name import StepOutput, TensorDict, Batch
-from src.module_name.lightning_modules import BaseLightningModule
+from module_name import StepOutput, TensorDict, Batch
+from module_name.lightning_modules import BaseLightningModule
 import pytorch_lightning as pl
 from typing import Literal
-from src.module_name.callbacks.metrics import BaseMetric
-from src.module_name.callbacks.extras import ExtraMetricOutput
+from module_name.callbacks.metrics import BaseMetric
+from module_name.callbacks.extras import ExtraMetricOutput
 
 
 class MetricsCallback(Callback):
@@ -14,8 +14,8 @@ class MetricsCallback(Callback):
 
         # check that none of the metrics have duplicate names
         metric_names = [metric.name() for metric in self.metrics]
-        assert len(metric_names) == len(
-            set(metric_names)
+        assert (
+            len(metric_names) == len(set(metric_names))
         ), f"Duplicate metric names: {set([name for name in metric_names if metric_names.count(name) > 1])}"
 
     def on_fit_start(self, trainer: pl.Trainer, pl_module: BaseLightningModule) -> None:
@@ -33,7 +33,11 @@ class MetricsCallback(Callback):
             extra.to(pl_module.device)
 
     def _add_extras(
-        self, pl_module: BaseLightningModule, outputs: StepOutput, batch: Batch, batch_idx: int
+        self,
+        pl_module: BaseLightningModule,
+        outputs: StepOutput,
+        batch: Batch,
+        batch_idx: int,
     ) -> TensorDict:
         """
         This method calculates the extra outputs for the current batch and returns them as a dictionary.
@@ -42,7 +46,9 @@ class MetricsCallback(Callback):
         """
         extras = {}
         for extra in self.extras:
-            extra_outputs = extra(pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx)
+            extra_outputs = extra(
+                pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx
+            )
             assert extras.keys().isdisjoint(
                 extra_outputs
             ), f"Duplicate extra output keys: {extras.keys() & extra_outputs.keys()}"
@@ -50,7 +56,12 @@ class MetricsCallback(Callback):
         return extras
 
     def _add_metrics(
-        self, pl_module: BaseLightningModule, outputs: StepOutput, batch: Batch, batch_idx: int, extras: TensorDict
+        self,
+        pl_module: BaseLightningModule,
+        outputs: StepOutput,
+        batch: Batch,
+        batch_idx: int,
+        extras: TensorDict,
     ) -> None:
         """
         This method adds the current batch's outputs to the metrics.
@@ -58,9 +69,17 @@ class MetricsCallback(Callback):
         The metrics will accumulate the necessary information from each batch, and then compute the final metric values at the end of the epoch.
         """
         for metric in self.metrics:
-            metric.add(pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx, extras=extras)
+            metric.add(
+                pl_module=pl_module,
+                outputs=outputs,
+                batch=batch,
+                batch_idx=batch_idx,
+                extras=extras,
+            )
 
-    def _compute_metrics(self, pl_module: BaseLightningModule, phase: Literal["val", "test"]) -> None:
+    def _compute_metrics(
+        self, pl_module: BaseLightningModule, phase: Literal["val", "test"]
+    ) -> None:
         """
         This method computes the final metric values and logs them to PyTorch Lightning.
         It should be called at the end of each validation epoch.
@@ -73,7 +92,10 @@ class MetricsCallback(Callback):
 
             if metric_value is not None:
                 pl_module.logger.log_metrics(
-                    {f"metrics/{phase}/{metric.name()}/{k}": v for k, v in metric_value.items()}
+                    {
+                        f"metrics/{phase}/{metric.name()}/{k}": v
+                        for k, v in metric_value.items()
+                    }
                 )
 
             metric.reset()
@@ -86,17 +108,42 @@ class MetricsCallback(Callback):
         batch: Batch,
         batch_idx: int,
     ) -> None:
-        extras = self._add_extras(pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx)
-        self._add_metrics(pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx, extras=extras)
+        extras = self._add_extras(
+            pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx
+        )
+        self._add_metrics(
+            pl_module=pl_module,
+            outputs=outputs,
+            batch=batch,
+            batch_idx=batch_idx,
+            extras=extras,
+        )
 
-    def on_validation_epoch_end(self, trainer: pl.Trainer, pl_module: BaseLightningModule) -> None:
+    def on_validation_epoch_end(
+        self, trainer: pl.Trainer, pl_module: BaseLightningModule
+    ) -> None:
         self._compute_metrics(pl_module=pl_module, phase="val")
 
     def on_test_batch_end(
-        self, trainer: pl.Trainer, pl_module: BaseLightningModule, outputs: StepOutput, batch: Batch, batch_idx: int
+        self,
+        trainer: pl.Trainer,
+        pl_module: BaseLightningModule,
+        outputs: StepOutput,
+        batch: Batch,
+        batch_idx: int,
     ) -> None:
-        extras = self._add_extras(pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx)
-        self._add_metrics(pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx, extras=extras)
+        extras = self._add_extras(
+            pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx
+        )
+        self._add_metrics(
+            pl_module=pl_module,
+            outputs=outputs,
+            batch=batch,
+            batch_idx=batch_idx,
+            extras=extras,
+        )
 
-    def on_test_epoch_end(self, trainer: pl.Trainer, pl_module: BaseLightningModule) -> None:
+    def on_test_epoch_end(
+        self, trainer: pl.Trainer, pl_module: BaseLightningModule
+    ) -> None:
         self._compute_metrics(pl_module=pl_module, phase="test")

@@ -1,5 +1,5 @@
 from .baseloss import BaseLossFunction
-from src.module_name import Batch, ModelOutput, LossOutput
+from module_name import Batch, ModelOutput, LossOutput
 import torch.nn as nn
 
 
@@ -10,7 +10,9 @@ class WeightedLoss(BaseLossFunction):
         weights: list[float],
     ):
         super().__init__()
-        assert len(losses) == len(weights), "Losses and weights must have the same length"
+        assert len(losses) == len(
+            weights
+        ), "Losses and weights must have the same length"
         self.losses: list[BaseLossFunction] = nn.ModuleList(losses)
         self.weights = weights
 

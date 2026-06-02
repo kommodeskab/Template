@@ -1,4 +1,4 @@
-from src.module_name.datasets import DummyDataset
+from module_name.datasets import DummyDataset
 
 
 # here is an example test function

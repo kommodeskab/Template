@@ -3,7 +3,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import Callback
 from torch.optim import Optimizer
 import logging
-from src.module_name.lightning_modules import BaseLightningModule
+from module_name.lightning_modules import BaseLightningModule
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +36,9 @@ class EMACallback(Callback):
     def on_test_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
         self.ema.to(pl_module.device)
 
-    def on_before_zero_grad(self, trainer: pl.Trainer, pl_module: BaseLightningModule, optimizer: Optimizer):
+    def on_before_zero_grad(
+        self, trainer: pl.Trainer, pl_module: BaseLightningModule, optimizer: Optimizer
+    ):
         self.ema.update()
 
     def on_validation_start(self, trainer: pl.Trainer, pl_module: BaseLightningModule):

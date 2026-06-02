@@ -2,7 +2,7 @@ from omegaconf import DictConfig
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
 from omegaconf import OmegaConf
-from src.module_name.utils import (
+from module_name.utils import (
     instantiate_callbacks,
     get_ckpt_path,
     model_config_from_id,
@@ -29,7 +29,7 @@ def update_dict(d: dict | list[dict]) -> None:
     Why? Because if the the same model is finetuned multiple times, the initialization process will be a mess since it will load all previous configs.
     """
     if isinstance(d, dict):
-        if d.get("_target_", None) == "src.networks.PretrainedModel":
+        if d.get("_target_", None) == "module_name.networks.PretrainedModel":
             id = d["id"]
             model_keyword = d["model_keyword"]
             model_config = model_config_from_id(id, model_keyword)
@@ -52,13 +52,17 @@ def my_app(cfg: DictConfig) -> None:
     config = OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True)
     update_dict(config)
 
-    logger.info("Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False))
+    logger.info(
+        "Config:\n%s", yaml.dump(config, default_flow_style=False, sort_keys=False)
+    )
 
     if cfg.continue_from_id:
         # if 'continue_from_id' is set, we continue from the given id
         # this requires 'ckpt_filename' to be set as well
         id = str(cfg.continue_from_id)
-        assert cfg.ckpt_filename is not None, "'ckpt_filename' must be provided when continue_from_id is set."
+        assert (
+            cfg.ckpt_filename is not None
+        ), "'ckpt_filename' must be provided when continue_from_id is set."
         ckpt_path = get_ckpt_path(id, cfg.ckpt_filename)
         logger.info(f"Continuing from id: {id}.\n Using checkpoint path: {ckpt_path}")
 
@@ -72,7 +76,9 @@ def my_app(cfg: DictConfig) -> None:
         ), "'ckpt_filename' must be in the format '<id>/<filename>' when continuing from a specific checkpoint."
         ckpt_id, filename = cfg.ckpt_filename.split("/")
         ckpt_path = get_ckpt_path(ckpt_id, filename)
-        logger.info(f"Starting a new run with id: {id}.\n Using checkpoint path: {ckpt_path}")
+        logger.info(
+            f"Starting a new run with id: {id}.\n Using checkpoint path: {ckpt_path}"
+        )
 
     else:
         # if neither 'continue_from_id' nor 'ckpt_filename' is set, we start a new experiment
@@ -99,7 +105,9 @@ def my_app(cfg: DictConfig) -> None:
 
     if cfg.compile:
         logger.info("Compiling model..")
-        logger.warning("You cannot compile models on CPU. Make sure you are using a GPU!")
+        logger.warning(
+            "You cannot compile models on CPU. Make sure you are using a GPU!"
+        )
         model = torch.compile(model)
 
     if cfg.phase == "train":

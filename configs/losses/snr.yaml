@@ -1,1 +1,1 @@
-_target_: src.losses.SNRLoss
+_target_: module_name.losses.SNRLoss

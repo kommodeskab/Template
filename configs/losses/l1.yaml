@@ -1,1 +1,1 @@
-_target_: src.losses.L1Loss
+_target_: module_name.losses.L1Loss

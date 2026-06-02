@@ -1,5 +1,5 @@
 from torch.nn import Module
-from src.module_name.utils import model_from_id
+from module_name.utils import model_from_id
 
 
 class PretrainedModel:
