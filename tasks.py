@@ -156,7 +156,7 @@ def submit(
         jobname: Custom job name (defaults to experiment name)
 
     Example:
-        >>> invoke submit --command="python main.py +experiment=dummy +trainer.max_steps=100" --gpu=gpua100 --walltime=24:00
+        >>> invoke submit --command="train +experiment=dummy +trainer.max_steps=100" --gpu=gpua100 --walltime=24:00
     """
     import tempfile
     import os
@@ -216,7 +216,7 @@ def submit_experiment(
     mem=4,
     walltime="3:00",
 ):
-    command = f"uv run python main.py {experiment}"
+    command = f"uv run train {experiment}"
     submit(c, command, jobname, gpu, ngpus, ncores, mem, walltime)
 
 
@@ -303,5 +303,5 @@ def logs(c: Context, jobid=None, tail=50):
 @task
 def coverage(c: Context):
     """Generate code coverage report."""
-    c.run("coverage run --source=src -m pytest")
+    c.run("coverage run --source={{project_name}} -m pytest")
     c.run("coverage report -m")
