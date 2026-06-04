@@ -1,12 +1,8 @@
 from {{project_name}}.losses import MSELoss
-from {{project_name}} import ModelOutput, Batch
-import torch
 
 
-def test_mse_loss():
+def test_mse_loss(dummy_batch, dummy_model_output):
     loss_fn = MSELoss()
-    batch = Batch(input=torch.randn(16, 10), target=torch.randn(16, 1))
-    model_output = ModelOutput(output=torch.randn(16, 1))
-    loss = loss_fn.forward(model_output, batch)
+    loss = loss_fn.forward(dummy_model_output, dummy_batch)
     assert "loss" in loss, "Loss output should contain 'loss' key"
     assert loss["loss"].item() >= 0, "Loss value should be non-negative"
