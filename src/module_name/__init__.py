@@ -7,10 +7,12 @@ from matplotlib.figure import Figure
 import numpy as np
 from pytorch_lightning import LightningModule
 
+
 TensorDict = Dict[str, Tensor]
 OptimizerType = Optional[partial[Optimizer]]
 LRSchedulerType = Optional[dict[str, partial[LRScheduler] | str]]
 ImageType = list[Tensor | Figure | np.ndarray]
+
 
 class Sample(TypedDict):
     """
@@ -55,6 +57,6 @@ class StepOutput(TypedDict):
     """
 
     loss: Tensor
-    model_output: Optional[ModelOutput] = None
-    loss_output: Optional[LossOutput] = None
-    module: Optional[LightningModule] = None
+    model_output: Optional[ModelOutput]
+    loss_output: Optional[LossOutput]
+    module: Optional[LightningModule]

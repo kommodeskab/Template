@@ -7,11 +7,15 @@ logger = logging.getLogger(__name__)
 
 
 def split_dataset(
-    train_dataset: Dataset, val_dataset: Optional[Dataset], train_val_split: Optional[float] = None
+    train_dataset: Dataset,
+    val_dataset: Optional[Dataset],
+    train_val_split: Optional[float] = None,
 ) -> tuple[Dataset, Dataset]:
-    if train_val_split is not None:
+    if val_dataset is None and train_val_split is not None:
         trainsize = int(train_val_split * len(train_dataset))
-        train_dataset, val_dataset = random_split(train_dataset, [trainsize, len(train_dataset) - trainsize])
+        train_dataset, val_dataset = random_split(
+            train_dataset, [trainsize, len(train_dataset) - trainsize]
+        )
     return train_dataset, val_dataset
 
 
@@ -44,7 +48,9 @@ class BaseDM(pl.LightningDataModule):
         """
         super().__init__()
         if valset is None:
-            assert train_val_split is not None, "If no valset is provided, train_val_split must be specified."
+            assert (
+                train_val_split is not None
+            ), "If no valset is provided, train_val_split must be specified."
 
         self.trainset, self.valset = split_dataset(trainset, valset, train_val_split)
         self.testset = testset

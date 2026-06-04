@@ -35,13 +35,13 @@ python main.py experiment=<experiment-name> compile=True
 - Continue a previous training run using W&B run ID + checkpoint file:
 
 ```bash
-python main.py experiment=<experiment-name> continue_from_id=<id> ckpt_filepath=<filepath>
+python main.py experiment=<experiment-name> continue_from_id=<id> ckpt_filename=<filename>
 ```
 
 - Start a new run but initialize from another checkpoint:
 
 ```bash
-python main.py experiment=<experiment-name> ckpt_filepath=<filepath>
+python main.py experiment=<experiment-name> ckpt_filename=<filename>
 ```
 
 ## Invoke Tasks

@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from functools import lru_cache
 import wandb
 import random
 import numpy as np
@@ -108,6 +109,7 @@ def get_logs_path() -> Path:
     return Path(get_environment_variable("LOGS_PATH"))
 
 
+@lru_cache(maxsize=128)
 def project_from_id(id: str) -> str:
     """
     Returns the project name for a specific WandB run ID.

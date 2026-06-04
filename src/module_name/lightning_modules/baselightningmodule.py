@@ -4,7 +4,7 @@ from torch import nn
 import torch.nn.init as init
 import torch
 from module_name.data_modules import BaseDM
-from module_name import OptimizerType, LRSchedulerType, Batch, ModelOutput, ImageType
+from module_name import OptimizerType, LRSchedulerType, Batch, ModelOutput
 from module_name.utils import temporary_seed
 from torch.utils.data import Dataset
 from typing import Optional
@@ -39,10 +39,6 @@ class BaseLightningModule(pl.LightningModule):
     @property
     def logger(self) -> WandbLogger:
         return self.trainer.logger
-
-    def log_images(self, key: str, images: list[ImageType], **kwargs) -> None:
-        logger = self.logger
-        logger.log_image(key=key, images=images, step=self.global_step)
 
     @staticmethod
     def init_weights(model: nn.Module) -> None:
