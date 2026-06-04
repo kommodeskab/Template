@@ -403,9 +403,8 @@ def download_checkpoint(
         # The file inside the artifact is named 'model.ckpt' (see modelcheckpoint.py)
         source_path = os.path.join(temp_dir, "model.ckpt")
 
-        assert not os.path.exists(
-            final_path
-        ), f"Checkpoint already exists at {final_path}."
+        if os.path.exists(final_path):
+            raise FileExistsError(f"Checkpoint already exists at {final_path}.")
 
         # Move and rename to the final destination
         shutil.move(source_path, final_path)

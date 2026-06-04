@@ -48,9 +48,10 @@ class BaseDM(pl.LightningDataModule):
         """
         super().__init__()
         if valset is None:
-            assert (
-                train_val_split is not None
-            ), "If no valset is provided, train_val_split must be specified."
+            if train_val_split is None:
+                raise ValueError(
+                    "If no valset is provided, train_val_split must be specified."
+                )
 
         self.trainset, self.valset = split_dataset(trainset, valset, train_val_split)
         self.testset = testset

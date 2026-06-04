@@ -12,11 +12,12 @@ class MetricsCallback(Callback):
         self.metrics = metrics
         self.extras = extras
 
-        # check that none of the metrics have duplicate names
         metric_names = [metric.name() for metric in self.metrics]
-        assert (
-            len(metric_names) == len(set(metric_names))
-        ), f"Duplicate metric names: {set([name for name in metric_names if metric_names.count(name) > 1])}"
+        if len(metric_names) != len(set(metric_names)):
+            duplicates = set(
+                [name for name in metric_names if metric_names.count(name) > 1]
+            )
+            raise ValueError(f"Duplicate metric names: {duplicates}")
 
     def on_fit_start(self, trainer: pl.Trainer, pl_module: BaseLightningModule) -> None:
         for metric in self.metrics:
@@ -49,9 +50,10 @@ class MetricsCallback(Callback):
             extra_outputs = extra(
                 pl_module=pl_module, outputs=outputs, batch=batch, batch_idx=batch_idx
             )
-            assert extras.keys().isdisjoint(
-                extra_outputs
-            ), f"Duplicate extra output keys: {extras.keys() & extra_outputs.keys()}"
+            if not extras.keys().isdisjoint(extra_outputs):
+                raise ValueError(
+                    f"Duplicate extra output keys: {extras.keys() & extra_outputs.keys()}"
+                )
             extras.update(extra_outputs)
         return extras
 

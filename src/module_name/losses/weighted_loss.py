@@ -10,9 +10,8 @@ class WeightedLoss(BaseLossFunction):
         weights: list[float],
     ):
         super().__init__()
-        assert len(losses) == len(
-            weights
-        ), "Losses and weights must have the same length"
+        if len(losses) != len(weights):
+            raise ValueError("Losses and weights must have the same length")
         self.losses: list[BaseLossFunction] = nn.ModuleList(losses)
         self.weights = weights
 

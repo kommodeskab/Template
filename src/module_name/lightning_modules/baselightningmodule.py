@@ -87,12 +87,12 @@ class BaseLightningModule(pl.LightningModule):
             return self.common_step(batch, batch_idx)
 
     def configure_optimizers(self):
-        assert (
-            self.partial_optimizer is not None
-        ), "Optimizer must be provided during training."
-        assert (
-            self.partial_lr_scheduler is not None
-        ), "Learning rate scheduler must be provided during training."
+        if self.partial_optimizer is None:
+            raise ValueError("Optimizer must be provided during training.")
+        if self.partial_lr_scheduler is None:
+            raise ValueError(
+                "Learning rate scheduler must be provided during training."
+            )
 
         optim = self.partial_optimizer(self.parameters())
         scheduler = self.partial_lr_scheduler.pop("scheduler")(optim)
