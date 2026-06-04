@@ -56,7 +56,7 @@ dependencies = [
 ]
 
 [project.scripts]
-{{project_name}} = "{{project_name}}.__main__:my_app"
+train = "{{project_name}}.__main__:my_app"
 
 [dependency-groups]
 dev = [
