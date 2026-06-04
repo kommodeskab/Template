@@ -1,0 +1,10 @@
+_templates_suffix: ""
+
+_exclude:
+    - .github          # uses ${{ }} syntax that conflicts with Jinja2
+    - uv.lock          # generated — user runs `uv sync` after copy
+    - copier.yml
+
+project_name:
+    type: str
+    help: "Python package name (snake_case, e.g. my_project)"

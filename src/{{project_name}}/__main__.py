@@ -42,7 +42,7 @@ def update_dict(d: dict | list[dict]) -> None:
             update_dict(v)
 
 
-@hydra.main(version_base=None, config_path="../../../configs", config_name="config")
+@hydra.main(version_base=None, config_path="../../configs", config_name="config")
 def my_app(cfg: DictConfig) -> None:
     logger = logging.getLogger(__name__)
 
