@@ -106,7 +106,7 @@ def get_data_path() -> Path:
 
 
 def get_logs_path() -> Path:
-    return Path(get_environment_variable("LOGS_PATH"))
+    return Path("logs")
 
 
 @lru_cache(maxsize=128)
@@ -206,21 +206,22 @@ def get_ckpt_path(
     """
 
     project = project_from_id(id)
-    ckpt_path = f"logs/{project}/{id}/checkpoints/{filename}.ckpt"
+    ckpt_path = get_logs_path() / project / id / "checkpoints" / f"{filename}.ckpt"
 
-    if not os.path.exists(ckpt_path):
+    if not ckpt_path.exists():
         try:
-            ckpt_path = download_checkpoint(
+            ckpt_str = download_checkpoint(
                 id=id,
                 filename=filename,
             )
-            logger.info(f"Checkpoint downloaded from WandB to {ckpt_path}.")
+            logger.info(f"Checkpoint downloaded from WandB to {ckpt_str}.")
+            return ckpt_str
         except Exception as e:
             raise ValueError(
                 f"Could not find or download checkpoint with filename '{filename}' for experiment id '{id}' in project '{project}'."
             ) from e
 
-    return ckpt_path
+    return str(ckpt_path)
 
 
 def what_logs_to_delete():
@@ -234,19 +235,21 @@ def what_logs_to_delete():
     project_names = api.projects()
     project_names = [project.name for project in project_names]
     print("It is safe to delete the following folders:")
+    logs_dir = get_logs_path()
     for project_name in project_names:
-        if not os.path.exists(f"logs/{project_name}"):
+        project_dir = logs_dir / project_name
+        if not project_dir.exists():
             continue
 
         runs = api.runs(project_name)
         run_ids = [run.id for run in runs]
-        local_run_ids = os.listdir(f"logs/{project_name}")
+        local_run_ids = [path.name for path in project_dir.iterdir() if path.is_dir()]
         local_run_ids.sort(reverse=True)
 
         for local_run_id in local_run_ids:
             if local_run_id not in run_ids:
                 # delete the folder
-                print(f"logs/{project_name}/{local_run_id}")
+                print(project_dir / local_run_id)
 
     print("Done")
 
@@ -385,32 +388,33 @@ def download_checkpoint(
     """
 
     # specify where to save the checkpoint
-    root = get_root()
+    root = Path(get_root())
     project = project_from_id(id)
-    savedir = f"{root}/logs/{project}/{id}/checkpoints"
-    os.makedirs(savedir, exist_ok=True)
+    savedir = root / get_logs_path() / project / id / "checkpoints"
+    savedir.mkdir(parents=True, exist_ok=True)
 
     # Define the final destination file path
-    final_path = os.path.join(savedir, f"{filename}.ckpt")
+    final_path = savedir / f"{filename}.ckpt"
 
     # Use a temporary directory to download first
     # to not overwrite existing files, since it will download as 'model.ckpt' as default (wandb logic)
     with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
         # download the artifact to a temporary directory
         artifact = get_artifact(id, filename)
-        artifact.download(root=temp_dir)
+        artifact.download(root=str(temp_path))
 
         # The file inside the artifact is named 'model.ckpt' (see modelcheckpoint.py)
-        source_path = os.path.join(temp_dir, "model.ckpt")
+        source_path = temp_path / "model.ckpt"
 
-        if os.path.exists(final_path):
+        if final_path.exists():
             raise FileExistsError(f"Checkpoint already exists at {final_path}.")
 
         # Move and rename to the final destination
-        shutil.move(source_path, final_path)
+        shutil.move(str(source_path), str(final_path))
         logger.info(f"Downloaded checkpoint to {final_path}.")
 
-    return final_path
+    return str(final_path)
 
 
 def get_batch_from_dataset(

@@ -1,5 +1,6 @@
 import requests
 import os
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,11 +17,10 @@ def update_zotero_bib() -> None:
     response = requests.get(url, headers=headers, params=params)
 
     if response.status_code == 200:
-        paper_path = os.environ["PAPER_PATH"]
-        path = os.path.join(paper_path, "refs.bib")
+        paper_path = Path(os.environ["PAPER_PATH"])
+        path = paper_path / "refs.bib"
         bibtex_content = response.text
-        with open(path, "w", encoding="utf-8") as f:
-            f.write(bibtex_content)
+        path.write_text(bibtex_content, encoding="utf-8")
 
         print(f"Saved to {path}")
     else:
