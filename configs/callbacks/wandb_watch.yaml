@@ -1,4 +1,4 @@
 wandb_watch:
-  _target_: src.callbacks.WandbWatchCallback
+  _target_: {{project_name}}.callbacks.WandbWatchCallback
   log: 'all'
   log_graph: true

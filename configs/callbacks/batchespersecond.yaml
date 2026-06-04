@@ -1,2 +1,2 @@
 batches_per_second:
-  _target_: src.callbacks.BatchesPerSecondCallback
+  _target_: {{project_name}}.callbacks.BatchesPerSecondCallback
