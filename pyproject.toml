@@ -70,6 +70,9 @@ dev = [
 [tool.pytest.ini_options]
 norecursedirs = ["*{*"]
 
+[tool.coverage.run]
+source = ["{{project_name}}"]
+
 [tool.ruff.lint.isort]
 known-third-party = ["wandb", "hydra"]
 
