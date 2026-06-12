@@ -1,21 +1,28 @@
-# Latent-DSB
+# PyTorch Lightning Hydra Template
 
-## Quick Start
+## Creating a New Project from This Template
 
-### Initialize the project
+Use [copier](https://copier.readthedocs.io) to generate a new project:
 
 ```bash
-uvx invoke build
+uvx copier copy <template-repo-url> <destination>
 ```
 
-### Fill out `.env`
+You will be prompted for:
 
-Add relevant API keys and paths (local data path, Weights & Biases, Hugging Face, etc.).
+- `project_name` — Python package name in `snake_case` (e.g. `my_project`)
+
+After generation, install dependencies:
+
+```bash
+cd <destination>
+uv sync
+```
 
 ### (Optional) Install pre-commit
 
 ```bash
-pip install pre-commit
+pre-commit install
 ```
 
 ## Running Experiments
@@ -64,10 +71,12 @@ Available tasks are defined in `tasks.py`. For example:
 invoke format
 ```
 
-## Are You Missing Anything?
+## Fill out `.env`
 
-Potentially useful additions:
+Add relevant API keys and paths (local data path, Weights & Biases, Hugging Face, etc.).
+Typical keys: `DATA_PATH`, `WANDB_ENTITY`, `WANDB_API_KEY`, `HF_TOKEN`.
+
+## Potential Improvements
 
 - Authenticate external services if needed (for example, `wandb login`).
-- Mention the expected `.env` keys (`DATA_PATH`, `WANDB_ENTITY`, `WANDB_API_KEY`, `HF_TOKEN`, etc.).
-- Add a short troubleshooting section for missing env vars, path issues, or CUDA/GPU setup.
+- Add a troubleshooting section for missing env vars, path issues, or CUDA/GPU setup.
