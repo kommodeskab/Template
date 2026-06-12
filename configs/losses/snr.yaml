@@ -1,1 +1,1 @@
-_target_: src.losses.SNRLoss
+_target_: {{project_name}}.losses.SNRLoss

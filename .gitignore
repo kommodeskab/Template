@@ -2,11 +2,13 @@
 /outputs
 /hpc
 /playgrounds
+/playground
 /data
 /wandb
 /configs/experiment/test*
 /configs/my_experiment/*
 /latex/refs.bib
+notes.md
 
 
 # ruff cache
