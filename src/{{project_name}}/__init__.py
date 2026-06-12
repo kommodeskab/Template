@@ -12,6 +12,7 @@ OptimizerType = Optional[partial[Optimizer]]
 LRSchedulerType = Optional[dict[str, partial[LRScheduler] | str]]
 ImageType = list[Tensor | Figure | np.ndarray]
 
+
 class Sample(TypedDict):
     """
     A classic regression/classification sample with an input and a target.

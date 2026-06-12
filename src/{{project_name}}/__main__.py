@@ -63,9 +63,9 @@ def my_app(cfg: DictConfig) -> None:
     elif cfg.ckpt_filename is not None:
         id = get_current_time()
         ckpt_path = cfg.ckpt_filename
-        assert (
-            "/" in cfg.ckpt_filename
-        ), "'ckpt_filename' must be in the format '<id>/<filename>' when continuing from a specific checkpoint."
+        assert "/" in cfg.ckpt_filename, (
+            "'ckpt_filename' must be in the format '<id>/<filename>' when continuing from a specific checkpoint."
+        )
         ckpt_id, filename = cfg.ckpt_filename.split("/")
         ckpt_path = get_ckpt_path(ckpt_id, filename)
         logger.info(f"Starting a new run with id: {id}.\n Using checkpoint path: {ckpt_path}")
