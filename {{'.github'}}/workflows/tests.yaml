@@ -1,4 +1,4 @@
-name: "Test template"
+{% raw %}name: "Run tests"
 
 on:
   push:
@@ -8,35 +8,29 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.operating-system }}
+    strategy:
+      matrix:
+        operating-system: ["ubuntu-latest"]
+        python-version: ["3.12"]
 
     steps:
     - uses: actions/checkout@v4
 
     - uses: astral-sh/setup-uv@v7
       with:
-        python-version: "3.12"
+        python-version: ${{ matrix.python-version }}
         enable-cache: true
 
-    - name: Generate project from template
-      run: >
-        uvx copier copy . /tmp/test_project
-        --data project_name=test_project
-        --defaults
-        --overwrite
-
     - name: Install dependencies
-      working-directory: /tmp/test_project
-      run: uv sync --dev
+      run: uv sync --dev --locked
 
     - name: Test with pytest
-      working-directory: /tmp/test_project
       run: uv run pytest -v
 
     - name: Run coverage
-      working-directory: /tmp/test_project
       run: uv run coverage run -m pytest
 
     - name: Generate coverage report
-      working-directory: /tmp/test_project
       run: uv run coverage report -m
+{% endraw %}
