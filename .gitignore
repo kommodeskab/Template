@@ -2,6 +2,7 @@
 /outputs
 /hpc
 /playgrounds
+/playground
 /data
 /wandb
 /configs/experiment/test*
