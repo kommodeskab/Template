@@ -67,6 +67,9 @@ dev = [
     "ruff>=0.14.10",
 ]
 
+[tool.pytest.ini_options]
+norecursedirs = ["*{*"]
+
 [tool.ruff.lint.isort]
 known-third-party = ["wandb", "hydra"]
 

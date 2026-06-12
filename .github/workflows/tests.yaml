@@ -29,14 +29,8 @@ jobs:
       working-directory: /tmp/test_project
       run: uv sync --dev
 
-    - name: Test with pytest
+    - name: Test with coverage
       working-directory: /tmp/test_project
-      run: uv run pytest -v
-
-    - name: Run coverage
-      working-directory: /tmp/test_project
-      run: uv run coverage run -m pytest
-
-    - name: Generate coverage report
-      working-directory: /tmp/test_project
-      run: uv run coverage report -m
+      run: |
+        uv run coverage run -m pytest -v
+        uv run coverage report -m
